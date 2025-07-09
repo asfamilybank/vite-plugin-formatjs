@@ -1,0 +1,25 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: '*.{ts,tsx,js,jsx,json,md}'
+      run: pnpm format:check
+    lint:
+      glob: '*.{ts,tsx}'
+      run: pnpm lint
+    typecheck:
+      glob: '*.{ts,tsx}'
+      run: pnpm typecheck
+
+pre-push:
+  parallel: true
+  commands:
+    test:
+      run: pnpm test
+    build:
+      run: pnpm build
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no-install commitlint --edit $1 
