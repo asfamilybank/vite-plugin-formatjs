@@ -15,11 +15,6 @@ export enum LogLevel {
  */
 export interface LogConfig {
   /**
-   * 是否启用调试模式
-   */
-  debug?: boolean;
-
-  /**
    * 日志级别
    */
   level?: LogLevel;
@@ -39,7 +34,6 @@ export interface LogConfig {
  * 默认配置
  */
 const DEFAULT_CONFIG: Required<LogConfig> = {
-  debug: false,
   level: LogLevel.INFO,
   prefix: '[vite-plugin-formatjs]',
   showTimestamp: false,
@@ -91,7 +85,7 @@ export class Logger {
    */
   debug(message: string, ...args: any[]): string {
     const msg = this.formatMessage('debug', message);
-    if (this.config.debug && this.shouldLog(LogLevel.DEBUG)) {
+    if (this.shouldLog(LogLevel.DEBUG)) {
       console.log(msg, ...args);
     }
     return this.formatMessage('debug', message);
@@ -144,14 +138,14 @@ export class Logger {
   /**
    * 性能日志
    */
-  perf(name: string, startTime: number, ...args: any[]): string {
-    if (this.config.debug && this.shouldLog(LogLevel.DEBUG)) {
+  perf(name: string, startTime: number): number {
+    if (this.shouldLog(LogLevel.DEBUG)) {
       const duration = Date.now() - startTime;
       const msg = this.formatMessage('perf', `${name} 耗时 ${duration}ms`);
-      console.log(msg, ...args);
-      return msg;
+      console.log(msg);
+      return duration;
     }
-    return '';
+    return 0;
   }
 
   /**
@@ -191,22 +185,8 @@ export const logger = {
     defaultLogger.error(message, ...args),
   success: (message: string, ...args: any[]) =>
     defaultLogger.success(message, ...args),
-  perf: (name: string, startTime: number, ...args: any[]) =>
-    defaultLogger.perf(name, startTime, ...args),
-};
-
-/**
- * 启用调试模式
- */
-export const enableDebug = (): void => {
-  defaultLogger.updateConfig({ debug: true });
-};
-
-/**
- * 禁用调试模式
- */
-export const disableDebug = (): void => {
-  defaultLogger.updateConfig({ debug: false });
+  perf: (name: string, startTime: number) =>
+    defaultLogger.perf(name, startTime),
 };
 
 /**
@@ -220,12 +200,18 @@ export const setLogLevel = (level: LogLevel): void => {
  * 性能计时器
  */
 export const createTimer = (name: string) => {
+  let isEnded = false;
+  let duration = 0;
   const startTime = Date.now();
   return {
-    end: (...args: any[]) => {
-      defaultLogger.perf(name, startTime, ...args);
+    end: (): void => {
+      if (isEnded) return;
+      isEnded = true;
+      duration = defaultLogger.perf(name, startTime);
+      return;
     },
     get duration() {
+      if (isEnded) return duration;
       return Date.now() - startTime;
     },
   };

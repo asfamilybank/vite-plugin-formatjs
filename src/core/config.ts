@@ -10,7 +10,6 @@ export const DEFAULT_CONFIG: FormatJSPluginOptions = {
   outFile: 'src/locals/messages.json',
   debug: false,
   hotReload: true,
-  incremental: true,
   extractOnBuild: true,
 };
 
@@ -65,6 +64,20 @@ function validateExtractOptions(options: FormatJSPluginOptions): void {
 
   if (options.debug !== undefined && typeof options.debug !== 'boolean') {
     throw new Error(logger.error('配置错误：debug 必须是布尔值'));
+  }
+
+  if (
+    options.hotReload !== undefined &&
+    typeof options.hotReload !== 'boolean'
+  ) {
+    throw new Error(logger.error('配置错误：hotReload 必须是布尔值'));
+  }
+
+  if (
+    options.extractOnBuild !== undefined &&
+    typeof options.extractOnBuild !== 'boolean'
+  ) {
+    throw new Error(logger.error('配置错误：extractOnBuild 必须是布尔值'));
   }
 }
 
