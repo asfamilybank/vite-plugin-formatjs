@@ -3,13 +3,18 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
+import globals from 'globals';
 
+/** @type {import('eslint').Linter.Config[]} */
 export default [
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsparser,
+      globals: {
+        ...globals.node,
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
@@ -17,6 +22,7 @@ export default [
       },
     },
     plugins: {
+      /** @type {any} */
       '@typescript-eslint': tseslint,
       import: importPlugin,
     },
@@ -24,7 +30,7 @@ export default [
       // TypeScript 推荐规则
       ...tseslint.configs.recommended.rules,
       ...tseslint.configs['recommended-type-checked'].rules,
-      
+
       // 导入规则
       'import/order': [
         'error',
@@ -45,13 +51,13 @@ export default [
       ],
       'import/no-duplicates': 'error',
       'import/no-unresolved': 'off', // TypeScript 会处理这个
-      
+
       // 通用规则
-      'no-console': 'warn',
+      'no-console': 'off',
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
-      
+
       // TypeScript 特定规则
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -73,4 +79,4 @@ export default [
     ignores: ['dist/', 'node_modules/', '*.config.js', '*.config.ts'],
   },
   prettierConfig,
-]; 
+];
