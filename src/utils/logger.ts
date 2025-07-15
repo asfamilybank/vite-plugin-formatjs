@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  * 日志级别枚举
  */
@@ -11,23 +9,46 @@ export enum LogLevel {
 }
 
 /**
+ * ANSI 颜色代码
+ */
+const COLORS = {
+  RESET: '\x1b[0m',
+  GRAY: '\x1b[90m',
+  BLUE: '\x1b[34m',
+  YELLOW: '\x1b[33m',
+  RED: '\x1b[31m',
+  GREEN: '\x1b[32m',
+} as const;
+
+/**
+ * 日志级别颜色映射
+ */
+const LEVEL_COLORS = {
+  [LogLevel.DEBUG]: COLORS.GRAY,
+  [LogLevel.INFO]: COLORS.BLUE,
+  [LogLevel.WARN]: COLORS.YELLOW,
+  [LogLevel.ERROR]: COLORS.RED,
+} as const;
+
+/**
+ * 日志级别表情映射
+ */
+const LEVEL_EMOJIS = {
+  [LogLevel.DEBUG]: '🔍',
+  [LogLevel.INFO]: 'ℹ️',
+  [LogLevel.WARN]: '⚠️',
+  [LogLevel.ERROR]: '❌',
+} as const;
+
+/**
  * 日志配置接口
  */
 export interface LogConfig {
-  /**
-   * 日志级别
-   */
   level?: LogLevel;
-
-  /**
-   * 日志前缀
-   */
   prefix?: string;
-
-  /**
-   * 是否显示时间戳
-   */
   showTimestamp?: boolean;
+  colors?: boolean;
+  emojis?: boolean;
 }
 
 /**
@@ -37,7 +58,19 @@ const DEFAULT_CONFIG: Required<LogConfig> = {
   level: LogLevel.INFO,
   prefix: '[vite-plugin-formatjs]',
   showTimestamp: false,
+  colors: true,
+  emojis: true,
 };
+
+/**
+ * 检测是否支持颜色输出
+ */
+function supportsColor(): boolean {
+  if (typeof process === 'undefined') return false;
+  if (process.env.NODE_ENV === 'test') return false;
+  if (process.env.NO_COLOR || process.env.CI) return false;
+  return Boolean(process.stdout?.isTTY);
+}
 
 /**
  * 日志工具类
@@ -52,25 +85,41 @@ export class Logger {
   /**
    * 更新配置
    */
-  updateConfig(config: Partial<LogConfig>): void {
+  public updateConfig(config: Partial<LogConfig>): void {
     this.config = { ...this.config, ...config };
+  }
+
+  /**
+   * 为文本添加颜色
+   */
+  private colorize(text: string, color: string): string {
+    if (!this.config.colors || !supportsColor()) {
+      return text;
+    }
+    return `${color}${text}${COLORS.RESET}`;
   }
 
   /**
    * 格式化消息
    */
-  private formatMessage(level: string, message: string): string {
-    const parts: string[] = [];
+  private formatMessage(level: LogLevel, message: string): string {
+    const levelName = LogLevel[level].toLowerCase();
+    const emoji = this.config.emojis ? `${LEVEL_EMOJIS[level]} ` : '';
+    const timestamp = this.config.showTimestamp
+      ? `[${new Date().toISOString()}] `
+      : '';
 
-    if (this.config.showTimestamp) {
-      parts.push(`[${new Date().toISOString()}]`);
-    }
+    // 构建级别标签
+    const levelLabel = `[${levelName.toUpperCase()}]`;
+    const coloredLevelLabel = this.colorize(levelLabel, LEVEL_COLORS[level]);
 
-    parts.push(this.config.prefix);
-    parts.push(`[${level.toUpperCase()}]`);
-    parts.push(message);
+    // 构建前缀
+    const coloredPrefix = this.colorize(
+      this.config.prefix,
+      LEVEL_COLORS[level]
+    );
 
-    return parts.join(' ');
+    return `${timestamp}${emoji}${coloredPrefix} ${coloredLevelLabel} ${message}`;
   }
 
   /**
@@ -83,69 +132,54 @@ export class Logger {
   /**
    * 调试日志
    */
-  debug(message: string, ...args: any[]): string {
-    const msg = this.formatMessage('debug', message);
+  debug(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.log(msg, ...args);
+      console.debug(this.formatMessage(LogLevel.DEBUG, message), ...args);
     }
-    return this.formatMessage('debug', message);
   }
 
   /**
    * 信息日志
    */
-  info(message: string, ...args: any[]): string {
-    const msg = this.formatMessage('info', message);
+  info(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.log(msg, ...args);
+      console.info(this.formatMessage(LogLevel.INFO, message), ...args);
     }
-    return msg;
   }
 
   /**
    * 警告日志
    */
-  warn(message: string, ...args: any[]): string {
-    const msg = this.formatMessage('warn', message);
+  warn(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      console.warn(msg, ...args);
+      console.warn(this.formatMessage(LogLevel.WARN, message), ...args);
     }
-    return msg;
   }
 
   /**
    * 错误日志
    */
-  error(message: string, ...args: any[]): string {
-    const msg = this.formatMessage('error', message);
+  error(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      console.error(msg, ...args);
+      console.error(this.formatMessage(LogLevel.ERROR, message), ...args);
     }
-    return msg;
   }
 
   /**
    * 成功日志（绿色）
    */
-  success(message: string, ...args: any[]): string {
-    const msg = this.formatMessage('success', message);
+  success(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.log(`\x1b[32m${msg}\x1b[0m`, ...args);
-    }
-    return msg;
-  }
+      const emoji = this.config.emojis ? '✅ ' : '';
+      const timestamp = this.config.showTimestamp
+        ? `[${new Date().toISOString()}] `
+        : '';
+      const coloredPrefix = this.colorize(this.config.prefix, COLORS.GREEN);
+      const coloredLevel = this.colorize('[SUCCESS]', COLORS.GREEN);
+      const formattedMessage = `${timestamp}${emoji}${coloredPrefix} ${coloredLevel} ${message}`;
 
-  /**
-   * 性能日志
-   */
-  perf(name: string, startTime: number): number {
-    if (this.shouldLog(LogLevel.DEBUG)) {
-      const duration = Date.now() - startTime;
-      const msg = this.formatMessage('perf', `${name} 耗时 ${duration}ms`);
-      console.log(msg);
-      return duration;
+      console.log(formattedMessage, ...args);
     }
-    return 0;
   }
 
   /**
@@ -172,24 +206,6 @@ export const createLogger = (config: LogConfig = {}): Logger => {
 export const defaultLogger = createLogger();
 
 /**
- * 便捷的日志函数
- */
-export const logger = {
-  debug: (message: string, ...args: any[]) =>
-    defaultLogger.debug(message, ...args),
-  info: (message: string, ...args: any[]) =>
-    defaultLogger.info(message, ...args),
-  warn: (message: string, ...args: any[]) =>
-    defaultLogger.warn(message, ...args),
-  error: (message: string, ...args: any[]) =>
-    defaultLogger.error(message, ...args),
-  success: (message: string, ...args: any[]) =>
-    defaultLogger.success(message, ...args),
-  perf: (name: string, startTime: number) =>
-    defaultLogger.perf(name, startTime),
-};
-
-/**
  * 设置日志级别
  */
 export const setLogLevel = (level: LogLevel): void => {
@@ -197,22 +213,13 @@ export const setLogLevel = (level: LogLevel): void => {
 };
 
 /**
- * 性能计时器
+ * 重置默认logger配置
  */
-export const createTimer = (name: string) => {
-  let isEnded = false;
-  let duration = 0;
-  const startTime = Date.now();
-  return {
-    end: (): void => {
-      if (isEnded) return;
-      isEnded = true;
-      duration = defaultLogger.perf(name, startTime);
-      return;
-    },
-    get duration() {
-      if (isEnded) return duration;
-      return Date.now() - startTime;
-    },
-  };
+export const resetDefaultLogger = (): void => {
+  defaultLogger.updateConfig(DEFAULT_CONFIG);
 };
+
+/**
+ * 便捷的日志实例
+ */
+export const logger = defaultLogger;
