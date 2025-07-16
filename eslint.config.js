@@ -78,5 +78,11 @@ export default [
   {
     ignores: ['dist/', 'node_modules/', '*.config.js', '*.config.ts'],
   },
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
   prettierConfig,
 ];
