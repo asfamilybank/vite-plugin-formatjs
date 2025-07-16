@@ -14,6 +14,7 @@ import {
   getOutFileHash,
   writeCache,
 } from '../cache';
+import { PLUGIN_NAME } from '../constant';
 
 // Mock fs 模块
 vi.mock('fs', () => ({
@@ -35,7 +36,6 @@ vi.mock('../logger', () => ({
 }));
 
 // Mock process.cwd
-// eslint-disable-next-line @typescript-eslint/unbound-method
 const originalCwd = process.cwd;
 beforeEach(() => {
   vi.clearAllMocks();
@@ -50,17 +50,13 @@ describe('cache.ts', () => {
   describe('getCacheDir', () => {
     it('应该返回正确的缓存目录路径', () => {
       const result = getCacheDir();
-      expect(result).toBe(
-        '/test/project/node_modules/.cache/vite-plugin-formatjs'
-      );
+      expect(result).toBe(`/test/project/node_modules/.cache/${PLUGIN_NAME}`);
     });
 
     it('应该使用当前工作目录', () => {
       process.cwd = vi.fn().mockReturnValue('/different/path');
       const result = getCacheDir();
-      expect(result).toBe(
-        '/different/path/node_modules/.cache/vite-plugin-formatjs'
-      );
+      expect(result).toBe(`/different/path/node_modules/.cache/${PLUGIN_NAME}`);
     });
   });
 
@@ -235,7 +231,7 @@ describe('cache.ts', () => {
       await writeCache('/project/locales/messages.json', 'abcdef123456');
 
       expect(mocked).toHaveBeenCalledWith(
-        '/test/project/node_modules/.cache/vite-plugin-formatjs',
+        `/test/project/node_modules/.cache/${PLUGIN_NAME}`,
         { recursive: true }
       );
     });
@@ -363,7 +359,7 @@ describe('cache.ts', () => {
       await clearAllCache();
 
       expect(vi.mocked(fs.rmdir)).toHaveBeenCalledWith(
-        '/test/project/node_modules/.cache/vite-plugin-formatjs',
+        `/test/project/node_modules/.cache/${PLUGIN_NAME}`,
         { recursive: true }
       );
     });

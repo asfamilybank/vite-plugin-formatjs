@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 
+import { PLUGIN_NAME } from './constant';
 import { logger } from './logger';
 
 /**
@@ -17,12 +18,7 @@ export interface CacheRecord {
  * 获取缓存目录
  */
 export function getCacheDir(): string {
-  return path.join(
-    process.cwd(),
-    'node_modules',
-    '.cache',
-    'vite-plugin-formatjs'
-  );
+  return path.join(process.cwd(), 'node_modules', '.cache', PLUGIN_NAME);
 }
 
 /**

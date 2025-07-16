@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PLUGIN_NAME } from '../constant';
 import {
   createLogger,
   defaultLogger,
@@ -42,7 +43,7 @@ describe('Logger 测试', () => {
       logger.info('测试消息');
 
       const callArgs = consoleSpy.info.mock.calls[0];
-      expect(callArgs[0]).toContain('[vite-plugin-formatjs]');
+      expect(callArgs[0]).toContain(`[${PLUGIN_NAME}]`);
       expect(callArgs[0]).toContain('[INFO]');
       expect(callArgs[0]).toContain('测试消息');
     });
@@ -119,7 +120,7 @@ describe('Logger 测试', () => {
       logger.info('测试消息');
 
       const callArgs = consoleSpy.info.mock.calls[0];
-      expect(callArgs[0]).toContain('[vite-plugin-formatjs]');
+      expect(callArgs[0]).toContain(`[${PLUGIN_NAME}]`);
       expect(callArgs[0]).toContain('[INFO]');
       expect(callArgs[0]).toContain('测试消息');
     });

@@ -10,7 +10,7 @@ const DEFAULT_CONFIG: Readonly<FormatJSPluginOptions> = {
   outFile: 'src/locales/messages.json',
   debug: false,
   hotReload: true,
-  extractOnBuild: true,
+  extractOnBuild: false,
 
   // @formatjs/cli-lib 常用选项
   idInterpolationPattern: '[sha512:contenthash:base64:6]',

@@ -1,3 +1,5 @@
+import { PLUGIN_NAME } from './constant';
+
 /**
  * 日志级别枚举
  */
@@ -56,7 +58,7 @@ export interface LogConfig {
  */
 const DEFAULT_CONFIG: Required<LogConfig> = {
   level: LogLevel.INFO,
-  prefix: '[vite-plugin-formatjs]',
+  prefix: `[${PLUGIN_NAME}]`,
   showTimestamp: false,
   colors: true,
   emojis: true,

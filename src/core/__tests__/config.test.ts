@@ -15,7 +15,7 @@ describe('config.ts', () => {
         outFile: 'src/locales/messages.json',
         debug: false,
         hotReload: true,
-        extractOnBuild: true,
+        extractOnBuild: false,
         // @formatjs/cli-lib 选项
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
       });
@@ -39,7 +39,7 @@ describe('config.ts', () => {
       // 开发友好的默认值
       expect(config.debug).toBe(false);
       expect(config.hotReload).toBe(true);
-      expect(config.extractOnBuild).toBe(true);
+      expect(config.extractOnBuild).toBe(false);
 
       // 合理的文件路径
       expect(config.include).toContain('src/**/*.{ts,tsx,js,jsx}');
@@ -59,7 +59,7 @@ describe('config.ts', () => {
         outFile: 'src/locales/messages.json',
         debug: false,
         hotReload: true,
-        extractOnBuild: true,
+        extractOnBuild: false,
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
         throws: true,
       });
@@ -86,7 +86,7 @@ describe('config.ts', () => {
         outFile: 'custom/messages.json', // 用户配置覆盖
         debug: true, // 用户配置覆盖
         hotReload: true, // 默认值保持
-        extractOnBuild: true, // 默认值保持
+        extractOnBuild: false, // 默认值保持
         idInterpolationPattern: '[sha512:contenthash:base64:6]', // 默认值保持
         throws: true,
       });
