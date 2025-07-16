@@ -14,6 +14,7 @@ const DEFAULT_CONFIG: Readonly<FormatJSPluginOptions> = {
 
   // @formatjs/cli-lib 常用选项
   idInterpolationPattern: '[sha512:contenthash:base64:6]',
+  throws: true,
 };
 
 /**

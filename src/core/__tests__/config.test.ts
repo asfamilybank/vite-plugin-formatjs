@@ -61,6 +61,7 @@ describe('config.ts', () => {
         hotReload: true,
         extractOnBuild: true,
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
+        throws: true,
       });
     });
 
@@ -87,6 +88,7 @@ describe('config.ts', () => {
         hotReload: true, // 默认值保持
         extractOnBuild: true, // 默认值保持
         idInterpolationPattern: '[sha512:contenthash:base64:6]', // 默认值保持
+        throws: true,
       });
     });
 
@@ -115,6 +117,7 @@ describe('config.ts', () => {
         hotReload: false,
         extractOnBuild: false,
         idInterpolationPattern: '[hash:8]',
+        throws: true,
       };
 
       const config = resolveConfig(userConfig);
