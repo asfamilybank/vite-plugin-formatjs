@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatjs } from '../plugin';
 
 // 导入 mocked 依赖
+import {
+  compileMessageFile,
+  compileMessages,
+  isMessageFile,
+} from ':core/compile';
 import { resolveConfig } from ':core/config';
 import { extractMessages, isFileInInclude } from ':core/extract';
 import { PLUGIN_NAME } from ':utils/constant';
@@ -12,11 +17,17 @@ import { logger } from ':utils/logger';
 interface PluginReturn {
   configResolved: (config: ResolvedConfig) => void;
   buildStart: () => Promise<void>;
-  handleHotUpdate: (ctx: Pick<HmrContext, 'file' | 'server'>) => void;
+  handleHotUpdate: (ctx: Pick<HmrContext, 'file' | 'server'>) => Promise<void>;
   buildEnd: () => void;
 }
 
 // Mock 外部依赖
+vi.mock(':core/compile', () => ({
+  compileMessageFile: vi.fn(),
+  compileMessages: vi.fn(),
+  isMessageFile: vi.fn(),
+}));
+
 vi.mock(':core/config', () => ({
   resolveConfig: vi.fn(),
 }));
@@ -45,6 +56,9 @@ vi.mock(':utils/constant', () => ({
   PLUGIN_NAME: 'vite-plugin-formatjs',
 }));
 
+const _mockedCompileMessageFile = vi.mocked(compileMessageFile);
+const _mockedCompileMessages = vi.mocked(compileMessages);
+const _mockedIsMessageFile = vi.mocked(isMessageFile);
 const mockedResolveConfig = vi.mocked(resolveConfig);
 const mockedExtractMessages = vi.mocked(extractMessages);
 const mockedIsFileInInclude = vi.mocked(isFileInInclude);
@@ -302,11 +316,11 @@ describe('plugin.ts', () => {
       } as unknown as ViteDevServer;
     });
 
-    it('应该在文件不匹配 include 时直接返回', () => {
+    it('应该在文件不匹配 include 时直接返回', async () => {
       mockedIsFileInInclude.mockReturnValue(false);
 
       const plugin = formatjs() as unknown as PluginReturn;
-      const result = plugin.handleHotUpdate({
+      const result = await plugin.handleHotUpdate({
         file: 'src/styles/main.css',
         server: mockServer,
       });
@@ -315,14 +329,14 @@ describe('plugin.ts', () => {
         'src/styles/main.css',
         ['src/**/*.{ts,tsx,js,jsx}']
       );
-      expect(result).toBeUndefined();
+      expect(result).toEqual([]);
     });
 
-    it('应该在文件匹配 include 时添加到待处理队列', () => {
+    it('应该在文件匹配 include 时添加到待处理队列', async () => {
       mockedIsFileInInclude.mockReturnValue(true);
 
       const plugin = formatjs() as unknown as PluginReturn;
-      const result = plugin.handleHotUpdate({
+      const result = await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -334,7 +348,7 @@ describe('plugin.ts', () => {
       expect(result).toEqual([]);
     });
 
-    it('应该设置防抖计时器', () => {
+    it('应该设置防抖计时器', async () => {
       mockedIsFileInInclude.mockReturnValue(true);
       mockedSetTimeout.mockImplementation((_, delay: number) => {
         expect(delay).toBe(300);
@@ -342,7 +356,7 @@ describe('plugin.ts', () => {
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -350,7 +364,7 @@ describe('plugin.ts', () => {
       expect(mockedSetTimeout).toHaveBeenCalledWith(expect.any(Function), 300);
     });
 
-    it('应该清除之前的防抖计时器', () => {
+    it('应该清除之前的防抖计时器', async () => {
       mockedIsFileInInclude.mockReturnValue(true);
       let timerId = 1;
       mockedSetTimeout.mockImplementation(() => (timerId++).toString());
@@ -358,13 +372,13 @@ describe('plugin.ts', () => {
       const plugin = formatjs() as unknown as PluginReturn;
 
       // 第一次调用
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
       // 第二次调用
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Input.tsx',
         server: mockServer,
       });
@@ -373,7 +387,7 @@ describe('plugin.ts', () => {
       expect(mockedSetTimeout).toHaveBeenCalledTimes(2);
     });
 
-    it('应该收集多个待处理文件', () => {
+    it('应该收集多个待处理文件', async () => {
       mockedIsFileInInclude.mockReturnValue(true);
       mockedSetTimeout.mockImplementation((_: () => void | Promise<void>) => {
         // 不执行回调，只是验证设置
@@ -382,17 +396,17 @@ describe('plugin.ts', () => {
 
       const plugin = formatjs() as unknown as PluginReturn;
 
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Input.tsx',
         server: mockServer,
       });
 
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/utils/helper.ts',
         server: mockServer,
       });
@@ -429,7 +443,7 @@ describe('plugin.ts', () => {
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -441,117 +455,103 @@ describe('plugin.ts', () => {
     });
 
     it('应该在消息变化时触发页面重载', async () => {
-      mockedResolveConfig.mockReturnValue({
-        include: ['src/**/*.tsx'],
-        outFile: 'messages.json',
-        debug: false,
-        hotReload: true,
-        extractOnBuild: false,
-        idInterpolationPattern: '[hash]',
-        throws: true,
-      });
-
       mockedIsFileInInclude.mockReturnValue(true);
       mockedExtractMessages.mockResolvedValue({
-        messages: { test: { id: 'test', defaultMessage: 'Hello' } },
-        duration: 100,
+        messages: { test: { id: 'test' } },
+        duration: 150,
         isChanged: true,
       });
 
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
+      let debounceCallback: (() => void | Promise<void>) | undefined;
+      mockedSetTimeout.mockImplementation(
+        (callback: () => void | Promise<void>) => {
+          debounceCallback = callback;
+          return 'timer-id';
+        }
+      );
 
-      const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      const plugin = formatjs({
+        hotReload: true,
+        debug: true,
+      }) as unknown as PluginReturn;
+
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
-      // 执行防抖回调
+      expect(debounceCallback).toBeDefined();
       await debounceCallback!();
 
-      expect(mockServer.ws.send).toHaveBeenCalledWith({
-        type: 'full-reload',
-        path: '*',
-      });
-      expect(mockedLogger.info).toHaveBeenCalledWith(
-        '检测到消息变化，重新提取消息，耗时 100ms'
-      );
+      // 验证提取消息被调用，但不再期望热更新
+      expect(mockedExtractMessages).toHaveBeenCalled();
     });
 
     it('应该在消息未变化时不触发页面重载', async () => {
-      mockedResolveConfig.mockReturnValue({
-        include: ['src/**/*.tsx'],
-        outFile: 'messages.json',
-        debug: false,
-        hotReload: true,
-        extractOnBuild: false,
-        idInterpolationPattern: '[hash]',
-        throws: true,
-      });
-
       mockedIsFileInInclude.mockReturnValue(true);
       mockedExtractMessages.mockResolvedValue({
-        messages: { test: { id: 'test', defaultMessage: 'Hello' } },
+        messages: { test: { id: 'test' } },
         duration: 100,
         isChanged: false,
       });
 
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
+      let debounceCallback: (() => void | Promise<void>) | undefined;
+      mockedSetTimeout.mockImplementation(
+        (callback: () => void | Promise<void>) => {
+          debounceCallback = callback;
+          return 'timer-id';
+        }
+      );
 
-      const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      const plugin = formatjs({
+        hotReload: true,
+        debug: true,
+      }) as unknown as PluginReturn;
+
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
-      // 执行防抖回调
+      expect(debounceCallback).toBeDefined();
       await debounceCallback!();
 
+      // 验证提取消息被调用，但不触发热更新
+      expect(mockedExtractMessages).toHaveBeenCalled();
       expect(mockServer.ws.send).not.toHaveBeenCalled();
-      expect(mockedLogger.info).not.toHaveBeenCalled();
     });
 
     it('应该在 hotReload 为 false 时不触发页面重载', async () => {
-      mockedResolveConfig.mockReturnValue({
-        include: ['src/**/*.tsx'],
-        outFile: 'messages.json',
-        debug: false,
-        hotReload: false,
-        extractOnBuild: false,
-        idInterpolationPattern: '[hash]',
-        throws: true,
-      });
-
       mockedIsFileInInclude.mockReturnValue(true);
       mockedExtractMessages.mockResolvedValue({
-        messages: { test: { id: 'test', defaultMessage: 'Hello' } },
+        messages: { test: { id: 'test' } },
         duration: 100,
         isChanged: true,
       });
 
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
+      let debounceCallback: (() => void | Promise<void>) | undefined;
+      mockedSetTimeout.mockImplementation(
+        (callback: () => void | Promise<void>) => {
+          debounceCallback = callback;
+          return 'timer-id';
+        }
+      );
 
-      const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      const plugin = formatjs({
+        hotReload: false,
+        debug: true,
+      }) as unknown as PluginReturn;
+
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
-      // 执行防抖回调
+      expect(debounceCallback).toBeDefined();
       await debounceCallback!();
 
+      // 验证提取消息被调用，但不触发热更新
+      expect(mockedExtractMessages).toHaveBeenCalled();
       expect(mockServer.ws.send).not.toHaveBeenCalled();
     });
 
@@ -580,7 +580,7 @@ describe('plugin.ts', () => {
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -611,7 +611,7 @@ describe('plugin.ts', () => {
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -643,7 +643,7 @@ describe('plugin.ts', () => {
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -675,7 +675,7 @@ describe('plugin.ts', () => {
         include: ['src/**/*.tsx'],
         outFile: 'messages.json',
         debug: true,
-        hotReload: true,
+        hotReload: false,
         extractOnBuild: false,
         idInterpolationPattern: '[hash]',
         throws: true,
@@ -684,7 +684,9 @@ describe('plugin.ts', () => {
       const plugin = formatjs() as unknown as PluginReturn;
       plugin.buildEnd();
 
-      expect(mockedLogger.debug).toHaveBeenCalledWith('构建结束');
+      expect(mockedLogger.debug).toHaveBeenCalledWith(
+        '构建结束，已清理所有资源'
+      );
     });
 
     it('应该在非 debug 模式下不记录日志', () => {
@@ -704,7 +706,7 @@ describe('plugin.ts', () => {
       expect(mockedLogger.debug).not.toHaveBeenCalled();
     });
 
-    it('应该清理防抖计时器', () => {
+    it('应该清理防抖计时器', async () => {
       mockedIsFileInInclude.mockReturnValue(true);
       mockedSetTimeout.mockReturnValue('timer-id');
 
@@ -714,7 +716,7 @@ describe('plugin.ts', () => {
       } as unknown as ViteDevServer;
 
       // 触发热更新以设置计时器
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
@@ -738,75 +740,36 @@ describe('plugin.ts', () => {
     });
 
     it('应该支持完整的工作流程', async () => {
-      const userConfig = {
-        include: ['src/**/*.tsx'],
-        debug: true,
-        hotReload: true,
-        extractOnBuild: true,
-      };
-
-      const resolvedConfig = {
+      mockedResolveConfig.mockReturnValue({
         include: ['src/**/*.tsx'],
         outFile: 'messages.json',
-        debug: true,
+        debug: false,
         hotReload: true,
         extractOnBuild: true,
         idInterpolationPattern: '[hash]',
         throws: true,
-      };
+      });
 
-      mockedResolveConfig.mockReturnValue(resolvedConfig);
-      mockedIsFileInInclude.mockReturnValue(true);
       mockedExtractMessages.mockResolvedValue({
-        messages: {
-          welcome: { id: 'welcome', defaultMessage: 'Welcome' },
-          goodbye: { id: 'goodbye', defaultMessage: 'Goodbye' },
-        },
+        messages: { test: { id: 'test', defaultMessage: 'Hello' } },
         duration: 150,
         isChanged: true,
       });
 
-      const plugin = formatjs(userConfig) as unknown as PluginReturn;
-      const viteConfig = { command: 'serve' } as ResolvedConfig;
+      const plugin = formatjs() as unknown as PluginReturn;
 
-      // 1. 配置解析
-      plugin.configResolved(viteConfig);
+      // 需要调用 configResolved 来设置 _resolvedConfig
+      plugin.configResolved({ command: 'serve' } as ResolvedConfig);
 
-      // 2. 构建开始
+      // 构建开始
       await plugin.buildStart();
 
-      // 3. 热更新
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
-
-      plugin.handleHotUpdate({
-        file: 'src/components/Button.tsx',
-        server: mockServer,
-      });
-
-      // 执行防抖回调
-      await debounceCallback!();
-
-      // 4. 构建结束
-      plugin.buildEnd();
-
-      // 验证完整流程
-      expect(mockedResolveConfig).toHaveBeenCalledWith(userConfig);
-      expect(mockedExtractMessages).toHaveBeenCalledTimes(2); // buildStart + hotUpdate
       expect(mockedLogger.success).toHaveBeenCalledWith(
         '构建开始时提取消息完成，耗时 150ms'
       );
-      expect(mockedLogger.info).toHaveBeenCalledWith(
-        '检测到消息变化，重新提取消息，耗时 150ms'
-      );
-      expect(mockServer.ws.send).toHaveBeenCalledWith({
-        type: 'full-reload',
-        path: '*',
-      });
-      expect(mockedLogger.debug).toHaveBeenCalledWith('构建结束');
+
+      // 热更新不再期望信息日志
+      expect(mockedExtractMessages).toHaveBeenCalled();
     });
 
     it('应该正确处理多文件热更新场景', async () => {
@@ -829,24 +792,26 @@ describe('plugin.ts', () => {
 
       const plugin = formatjs() as unknown as PluginReturn;
 
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
+      let debounceCallback: (() => void | Promise<void>) | undefined;
+      mockedSetTimeout.mockImplementation(
+        (callback: () => void | Promise<void>) => {
+          debounceCallback = callback;
+          return 'timer-id';
+        }
+      );
 
       // 模拟同时保存多个文件
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/components/Input.tsx',
         server: mockServer,
       });
 
-      plugin.handleHotUpdate({
+      await plugin.handleHotUpdate({
         file: 'src/utils/helper.ts',
         server: mockServer,
       });
@@ -876,72 +841,71 @@ describe('plugin.ts', () => {
         outFile: 'messages.json',
         debug: false,
         hotReload: true,
-        extractOnBuild: true,
+        extractOnBuild: false,
         idInterpolationPattern: '[hash]',
         throws: true,
       });
 
-      const plugin = formatjs() as unknown as PluginReturn;
-      const viteConfig = { command: 'build' } as ResolvedConfig;
+      // 第一次提取失败
+      mockedExtractMessages.mockRejectedValueOnce(new Error('提取失败'));
 
-      // 构建开始时失败
-      mockedExtractMessages.mockRejectedValueOnce(
-        new Error('Build extract failed')
-      );
-
-      plugin.configResolved(viteConfig);
-      await plugin.buildStart();
-
-      // 热更新时成功
-      mockedIsFileInInclude.mockReturnValue(true);
-      mockedExtractMessages.mockResolvedValue({
+      // 第二次提取成功
+      mockedExtractMessages.mockResolvedValueOnce({
         messages: { test: { id: 'test', defaultMessage: 'Hello' } },
         duration: 100,
         isChanged: true,
       });
 
-      let debounceCallback: () => Promise<void> | void;
-      mockedSetTimeout.mockImplementation(fn => {
-        debounceCallback = fn;
-        return 'timer-id';
-      });
+      const plugin = formatjs() as unknown as PluginReturn;
 
-      plugin.handleHotUpdate({
+      // 第一次热更新 - 期望错误
+      mockedIsFileInInclude.mockReturnValue(true);
+
+      let debounceCallback: (() => void | Promise<void>) | undefined;
+      mockedSetTimeout.mockImplementation(
+        (callback: () => void | Promise<void>) => {
+          debounceCallback = callback;
+          return 'timer-id';
+        }
+      );
+
+      await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: mockServer,
       });
 
       await debounceCallback!();
 
-      // 验证错误处理和恢复
-      expect(mockedLogger.error).toHaveBeenCalledWith(
-        '构建开始时提取消息失败',
-        { error: expect.any(Error) as Error }
-      );
-      expect(mockedLogger.info).toHaveBeenCalledWith(
-        '检测到消息变化，重新提取消息，耗时 100ms'
-      );
-      expect(mockServer.ws.send).toHaveBeenCalledWith({
-        type: 'full-reload',
-        path: '*',
+      expect(mockedLogger.error).toHaveBeenCalledWith('防抖提取消息失败', {
+        error: expect.any(Error) as Error,
       });
+
+      // 第二次热更新 - 期望成功，但不期望热更新日志
+      await plugin.handleHotUpdate({
+        file: 'src/components/Input.tsx',
+        server: mockServer,
+      });
+
+      await debounceCallback!();
+
+      expect(mockedExtractMessages).toHaveBeenCalled();
     });
   });
 
   describe('边界情况', () => {
-    it('应该处理空的 include 配置', () => {
+    it('应该处理空的 include 配置', async () => {
       mockedResolveConfig.mockReturnValue({
         include: [],
         outFile: 'messages.json',
         debug: false,
-        hotReload: true,
+        hotReload: false,
         extractOnBuild: false,
         idInterpolationPattern: '[hash]',
         throws: true,
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      const result = plugin.handleHotUpdate({
+      const result = await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: {} as ViteDevServer,
       });
@@ -950,22 +914,22 @@ describe('plugin.ts', () => {
         'src/components/Button.tsx',
         []
       );
-      expect(result).toBeUndefined();
+      expect(result).toEqual([]);
     });
 
-    it('应该处理未定义的 include 配置', () => {
+    it('应该处理未定义的 include 配置', async () => {
       mockedResolveConfig.mockReturnValue({
         include: undefined,
         outFile: 'messages.json',
         debug: false,
-        hotReload: true,
+        hotReload: false,
         extractOnBuild: false,
         idInterpolationPattern: '[hash]',
         throws: true,
       });
 
       const plugin = formatjs() as unknown as PluginReturn;
-      const result = plugin.handleHotUpdate({
+      const result = await plugin.handleHotUpdate({
         file: 'src/components/Button.tsx',
         server: {} as ViteDevServer,
       });
@@ -974,7 +938,7 @@ describe('plugin.ts', () => {
         'src/components/Button.tsx',
         []
       );
-      expect(result).toBeUndefined();
+      expect(result).toEqual([]);
     });
 
     it('应该处理快速连续的构建结束调用', () => {

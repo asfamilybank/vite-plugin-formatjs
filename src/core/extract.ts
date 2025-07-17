@@ -2,13 +2,10 @@ import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 
-import {
-  extract,
-  type ExtractCLIOptions,
-  type MessageDescriptor,
-} from '@formatjs/cli-lib';
+import { extract, type MessageDescriptor } from '@formatjs/cli-lib';
 import { minimatch } from 'minimatch';
 
+import { getExtractConfig } from './config';
 import type { FormatJSPluginOptions } from './types';
 
 import {
@@ -53,18 +50,6 @@ async function writeMessageFile(
   await fs.writeFile(outFile, content, 'utf8');
 }
 
-function getFormatJSOptions(options: FormatJSPluginOptions): ExtractCLIOptions {
-  const {
-    include: _,
-    debug: __,
-    hotReload: ___,
-    extractOnBuild: ____,
-    ...rest
-  } = options;
-
-  return rest;
-}
-
 /**
  * 提取消息
  */
@@ -73,54 +58,49 @@ export async function extractMessages(
 ): Promise<ExtractionResult> {
   const startTime = Date.now();
 
-  try {
-    // 检查必需参数
-    if (!options.include || !options.outFile) {
-      throw new Error('include 和 outFile 是必需的配置项');
-    }
-
-    // 调用 @formatjs/cli-lib 的 extract 函数
-    const formatJSOptions = getFormatJSOptions(options);
-    const extractResult = await extract(options.include, formatJSOptions);
-
-    // extract 返回的是 JSON 字符串，格式化后再次序列化确保一致性
-    const messages = JSON.parse(extractResult) as Record<
-      string,
-      MessageDescriptor
-    >;
-    const formattedContent = JSON.stringify(messages, null, 2);
-
-    // 生成内容 hash
-    const contentHash = generateContentHash(formattedContent);
-
-    // 读取缓存
-    const cache = await findCache(options.outFile);
-    const isChanged = !cache || cache.hash !== contentHash;
-
-    if (isChanged) {
-      // 写入消息文件
-      await writeMessageFile(options.outFile, formattedContent);
-
-      // 更新缓存
-      await writeCache(options.outFile, contentHash);
-
-      logger.debug('消息已更新', {
-        outFile: options.outFile,
-        messageCount: Object.keys(messages).length,
-      });
-    } else {
-      logger.debug('消息内容未变更，跳过写入');
-    }
-
-    return {
-      messages,
-      duration: Date.now() - startTime,
-      isChanged,
-    };
-  } catch (error) {
-    logger.error('提取消息失败', { error });
-    throw error;
+  // 检查必需参数
+  if (!options.include || !options.outFile) {
+    throw new Error('include 和 outFile 是必需的配置项');
   }
+
+  // 调用 @formatjs/cli-lib 的 extract 函数
+  const formatJSOptions = getExtractConfig(options);
+  const extractResult = await extract(options.include, formatJSOptions);
+
+  // extract 返回的是 JSON 字符串，格式化后再次序列化确保一致性
+  const messages = JSON.parse(extractResult) as Record<
+    string,
+    MessageDescriptor
+  >;
+  const formattedContent = JSON.stringify(messages, null, 2);
+
+  // 生成内容 hash
+  const contentHash = generateContentHash(formattedContent);
+
+  // 读取缓存
+  const cache = await findCache(options.outFile);
+  const isChanged = !cache || cache.hash !== contentHash;
+
+  if (isChanged) {
+    // 写入消息文件
+    await writeMessageFile(options.outFile, formattedContent);
+
+    // 更新缓存
+    await writeCache(options.outFile, contentHash);
+
+    logger.debug('消息已更新', {
+      outFile: options.outFile,
+      messageCount: Object.keys(messages).length,
+    });
+  } else {
+    logger.debug('消息内容未变更，跳过写入');
+  }
+
+  return {
+    messages,
+    duration: Date.now() - startTime,
+    isChanged,
+  };
 }
 
 /**

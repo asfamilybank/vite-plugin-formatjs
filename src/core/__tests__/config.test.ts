@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveConfig } from '../config';
+import { getCompileConfig, getExtractConfig, resolveConfig } from '../config';
 import type { FormatJSPluginOptions } from '../types';
 
 describe('config.ts', () => {
@@ -12,25 +12,40 @@ describe('config.ts', () => {
         // 插件特有选项
         include: ['src/**/*.{ts,tsx,js,jsx}'],
         ignore: ['node_modules', 'dist'],
-        outFile: 'src/locales/messages.json',
+        outFile: 'src/lang/en.json',
         debug: false,
         hotReload: true,
         extractOnBuild: false,
-        // @formatjs/cli-lib 选项
+
+        // Extract 相关配置
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
+        throws: true,
+
+        // Compile 相关配置
+        compileAst: true,
+        compileFolder: 'src/lang',
+        outFolder: 'src/compiled-lang',
+        compileOnBuild: true,
       });
     });
 
     it('应该返回具有正确类型的配置对象', () => {
       const config = resolveConfig();
 
+      // 插件特有选项
       expect(typeof config.debug).toBe('boolean');
       expect(typeof config.hotReload).toBe('boolean');
       expect(typeof config.extractOnBuild).toBe('boolean');
       expect(typeof config.outFile).toBe('string');
-      expect(typeof config.idInterpolationPattern).toBe('string');
       expect(Array.isArray(config.include)).toBe(true);
       expect(Array.isArray(config.ignore)).toBe(true);
+
+      // Extract 相关配置
+      expect(typeof config.idInterpolationPattern).toBe('string');
+      expect(typeof config.throws).toBe('boolean');
+
+      // Compile 相关配置
+      expect(typeof config.compileAst).toBe('boolean');
     });
 
     it('应该包含合理的默认值', () => {
@@ -45,7 +60,11 @@ describe('config.ts', () => {
       expect(config.include).toContain('src/**/*.{ts,tsx,js,jsx}');
       expect(config.ignore).toContain('node_modules');
       expect(config.ignore).toContain('dist');
-      expect(config.outFile).toBe('src/locales/messages.json');
+      expect(config.outFile).toBe('src/lang/en.json');
+
+      // 安全的默认值
+      expect(config.throws).toBe(true);
+      expect(config.compileAst).toBe(true);
     });
   });
 
@@ -56,12 +75,16 @@ describe('config.ts', () => {
       expect(config).toEqual({
         include: ['src/**/*.{ts,tsx,js,jsx}'],
         ignore: ['node_modules', 'dist'],
-        outFile: 'src/locales/messages.json',
+        outFile: 'src/lang/en.json',
         debug: false,
         hotReload: true,
         extractOnBuild: false,
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
         throws: true,
+        compileAst: true,
+        compileFolder: 'src/lang',
+        outFolder: 'src/compiled-lang',
+        compileOnBuild: true,
       });
     });
 
@@ -76,6 +99,12 @@ describe('config.ts', () => {
       const userConfig: Partial<FormatJSPluginOptions> = {
         debug: true,
         outFile: 'custom/messages.json',
+        extractFormat: 'crowdin',
+        compileFormat: 'simple',
+        compileAst: false,
+        compileFolder: 'custom/locales',
+        compileOnBuild: false,
+        outFolder: 'custom/compiled-lang',
       };
 
       const config = resolveConfig(userConfig);
@@ -88,7 +117,13 @@ describe('config.ts', () => {
         hotReload: true, // 默认值保持
         extractOnBuild: false, // 默认值保持
         idInterpolationPattern: '[sha512:contenthash:base64:6]', // 默认值保持
-        throws: true,
+        throws: true, // 默认值保持
+        extractFormat: 'crowdin', // 用户配置覆盖
+        compileFormat: 'simple', // 用户配置覆盖
+        compileAst: false, // 用户配置覆盖
+        compileFolder: 'custom/locales', // 用户配置覆盖
+        compileOnBuild: false, // 用户配置覆盖
+        outFolder: 'custom/compiled-lang', // 用户配置覆盖
       });
     });
 
@@ -115,9 +150,19 @@ describe('config.ts', () => {
         outFile: 'locales/extracted.json',
         debug: true,
         hotReload: false,
-        extractOnBuild: false,
+        extractOnBuild: true,
         idInterpolationPattern: '[hash:8]',
-        throws: true,
+        throws: false,
+        extractFormat: 'crowdin',
+        extractAst: false,
+        compileFormat: 'simple',
+        compileAst: false,
+        skipErrors: true,
+        pseudoLocale: 'en-XA',
+        ignoreTag: true,
+        compileFolder: 'custom/locales',
+        outFolder: 'custom/compiled-lang',
+        compileOnBuild: false,
       };
 
       const config = resolveConfig(userConfig);
@@ -141,6 +186,11 @@ describe('config.ts', () => {
         debug: false,
         hotReload: false,
         extractOnBuild: false,
+        throws: false,
+        compileAst: false,
+        extractAst: false,
+        skipErrors: false,
+        ignoreTag: false,
       };
 
       const config = resolveConfig(userConfig);
@@ -148,18 +198,25 @@ describe('config.ts', () => {
       expect(config.debug).toBe(false);
       expect(config.hotReload).toBe(false);
       expect(config.extractOnBuild).toBe(false);
+      expect(config.throws).toBe(false);
+      expect(config.compileAst).toBe(false);
+      expect(config.extractAst).toBe(false);
+      expect(config.skipErrors).toBe(false);
+      expect(config.ignoreTag).toBe(false);
     });
 
     it('应该处理空字符串', () => {
       const userConfig: Partial<FormatJSPluginOptions> = {
         outFile: '',
         idInterpolationPattern: '',
+        pseudoLocale: undefined,
       };
 
       const config = resolveConfig(userConfig);
 
       expect(config.outFile).toBe('');
       expect(config.idInterpolationPattern).toBe('');
+      expect(config.pseudoLocale).toBeUndefined();
     });
 
     it('应该处理空数组', () => {
@@ -172,6 +229,132 @@ describe('config.ts', () => {
 
       expect(config.include).toEqual([]);
       expect(config.ignore).toEqual([]);
+    });
+  });
+
+  describe('getExtractConfig', () => {
+    it('应该返回 Extract 专用配置', () => {
+      const config = resolveConfig({
+        include: ['src/**/*.tsx'],
+        debug: true,
+        hotReload: false,
+        extractOnBuild: true,
+        outFile: 'messages.json',
+        extractFormat: 'crowdin',
+        extractAst: false,
+        idInterpolationPattern: '[hash:8]',
+        throws: false,
+        compileAst: true,
+        compileFormat: 'simple',
+        skipErrors: true,
+        pseudoLocale: 'en-XA',
+        ignoreTag: true,
+      });
+
+      const extractConfig = getExtractConfig(config);
+
+      expect(extractConfig).toEqual({
+        outFile: 'messages.json',
+        format: 'crowdin', // extractFormat 重命名为 format
+        ast: false, // extractAst 重命名为 ast
+        idInterpolationPattern: '[hash:8]',
+        throws: false,
+        ignore: ['node_modules', 'dist'],
+      });
+
+      // 确保插件特有选项被排除
+      expect(extractConfig).not.toHaveProperty('include');
+      expect(extractConfig).not.toHaveProperty('debug');
+      expect(extractConfig).not.toHaveProperty('hotReload');
+      expect(extractConfig).not.toHaveProperty('extractOnBuild');
+
+      // 确保 compile 相关选项被排除
+      expect(extractConfig).not.toHaveProperty('compileAst');
+      expect(extractConfig).not.toHaveProperty('compileFormat');
+      expect(extractConfig).not.toHaveProperty('skipErrors');
+      expect(extractConfig).not.toHaveProperty('pseudoLocale');
+      expect(extractConfig).not.toHaveProperty('ignoreTag');
+    });
+
+    it('应该处理未定义的 extractFormat', () => {
+      const config = resolveConfig({
+        outFile: 'messages.json',
+      });
+
+      const extractConfig = getExtractConfig(config);
+
+      expect(extractConfig.format).toBeUndefined();
+    });
+
+    it('应该处理未定义的 extractAst', () => {
+      const config = resolveConfig({
+        outFile: 'messages.json',
+      });
+
+      const extractConfig = getExtractConfig(config);
+
+      expect(extractConfig.ast).toBeUndefined();
+    });
+  });
+
+  describe('getCompileConfig', () => {
+    it('应该返回 Compile 专用配置', () => {
+      const config = resolveConfig({
+        include: ['src/**/*.tsx'],
+        debug: true,
+        hotReload: false,
+        extractOnBuild: true,
+        outFile: 'messages.json',
+        extractFormat: 'crowdin',
+        extractAst: false,
+        idInterpolationPattern: '[hash:8]',
+        throws: false,
+        compileAst: true,
+        compileFormat: 'simple',
+        skipErrors: true,
+        pseudoLocale: 'en-XA',
+        ignoreTag: true,
+      });
+
+      const compileConfig = getCompileConfig(config);
+
+      expect(compileConfig).toEqual({
+        ast: true, // compileAst 重命名为 ast
+        skipErrors: true,
+        format: 'simple', // compileFormat 重命名为 format
+        pseudoLocale: 'en-XA',
+        ignoreTag: true,
+      });
+    });
+
+    it('应该处理未定义的 compile 选项', () => {
+      const config = resolveConfig({
+        outFile: 'messages.json',
+      });
+
+      const compileConfig = getCompileConfig(config);
+
+      expect(compileConfig).toEqual({
+        ast: true, // 默认值
+        skipErrors: undefined,
+        format: undefined,
+        pseudoLocale: undefined,
+        ignoreTag: undefined,
+      });
+    });
+
+    it('应该处理 falsy 值', () => {
+      const config = resolveConfig({
+        compileAst: false,
+        skipErrors: false,
+        ignoreTag: false,
+      });
+
+      const compileConfig = getCompileConfig(config);
+
+      expect(compileConfig.ast).toBe(false);
+      expect(compileConfig.skipErrors).toBe(false);
+      expect(compileConfig.ignoreTag).toBe(false);
     });
   });
 
@@ -208,8 +391,8 @@ describe('config.ts', () => {
 
       expect(config1.debug).toBe(true);
       expect(config2.debug).toBe(true);
-      expect(config1.outFile).toBe('src/locales/messages.json');
-      expect(config2.outFile).toBe('src/locales/messages.json');
+      expect(config1.outFile).toBe('src/lang/en.json');
+      expect(config2.outFile).toBe('src/lang/en.json');
     });
   });
 
@@ -225,6 +408,8 @@ describe('config.ts', () => {
       expect(config).toHaveProperty('hotReload');
       expect(config).toHaveProperty('extractOnBuild');
       expect(config).toHaveProperty('idInterpolationPattern');
+      expect(config).toHaveProperty('throws');
+      expect(config).toHaveProperty('compileAst');
     });
 
     it('应该接受部分配置作为输入', () => {
@@ -232,6 +417,48 @@ describe('config.ts', () => {
       expect(() => resolveConfig({})).not.toThrow();
       expect(() => resolveConfig({ debug: true })).not.toThrow();
       expect(() => resolveConfig({ include: ['test'] })).not.toThrow();
+      expect(() => resolveConfig({ extractFormat: 'crowdin' })).not.toThrow();
+      expect(() => resolveConfig({ compileFormat: 'simple' })).not.toThrow();
+    });
+  });
+
+  describe('配置函数集成测试', () => {
+    it('应该在完整工作流中正确分离配置', () => {
+      const userConfig: Partial<FormatJSPluginOptions> = {
+        include: ['src/**/*.tsx'],
+        debug: true,
+        outFile: 'messages.json',
+        extractFormat: 'crowdin',
+        extractAst: false,
+        idInterpolationPattern: '[hash:8]',
+        compileFormat: 'simple',
+        compileAst: true,
+        skipErrors: true,
+        pseudoLocale: 'en-XA',
+        compileFolder: 'custom/lang',
+      };
+
+      const config = resolveConfig(userConfig);
+      const extractConfig = getExtractConfig(config);
+      const compileConfig = getCompileConfig(config);
+
+      // 验证配置正确分离
+      expect(extractConfig).toEqual({
+        outFile: 'messages.json',
+        format: 'crowdin',
+        ast: false,
+        idInterpolationPattern: '[hash:8]',
+        throws: true,
+        ignore: ['node_modules', 'dist'],
+      });
+
+      expect(compileConfig).toEqual({
+        ast: true,
+        skipErrors: true,
+        format: 'simple',
+        pseudoLocale: 'en-XA',
+        ignoreTag: undefined,
+      });
     });
   });
 });

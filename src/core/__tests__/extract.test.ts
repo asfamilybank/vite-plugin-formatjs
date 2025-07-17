@@ -32,6 +32,7 @@ vi.mock(':utils/logger', () => ({
 }));
 
 // 导入 mocked 依赖
+import { FormatJSPluginOptions } from ':core/types';
 import {
   clearCache as clearCacheUtil,
   findCache,
@@ -318,8 +319,9 @@ describe('extract.ts', () => {
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
         throws: true,
         pragma: '@formatjs',
-        format: 'simple',
-      };
+        extractFormat: 'simple',
+        extractAst: true,
+      } satisfies FormatJSPluginOptions;
 
       mockedExtract.mockResolvedValue('{"message": "Hello"}');
       mockedFindCache.mockResolvedValue(null);
@@ -336,6 +338,7 @@ describe('extract.ts', () => {
           throws: true,
           pragma: '@formatjs',
           format: 'simple',
+          ast: true,
         })
       );
     });
