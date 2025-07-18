@@ -208,13 +208,6 @@ export const createLogger = (config: LogConfig = {}): Logger => {
 export const defaultLogger = createLogger();
 
 /**
- * 设置日志级别
- */
-export const setLogLevel = (level: LogLevel): void => {
-  defaultLogger.updateConfig({ level });
-};
-
-/**
  * 重置默认logger配置
  */
 export const resetDefaultLogger = (): void => {

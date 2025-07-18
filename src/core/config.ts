@@ -1,28 +1,64 @@
 import type { CompileOpts, ExtractCLIOptions } from '@formatjs/cli-lib';
 
-import type { FormatJSPluginOptions } from './types';
+import type {
+  BuildOptions,
+  CompileOptions,
+  DevOptions,
+  ExtractOptions,
+  UserFormatJSConfig,
+  VitePluginFormatJSOptions,
+} from './types';
 
 /**
- * 默认配置常量
+ * 默认提取配置
  */
-const DEFAULT_CONFIG: Readonly<FormatJSPluginOptions> = {
-  // 插件特有选项
-  include: ['src/**/*.{ts,tsx,js,jsx}'],
-  ignore: ['node_modules', 'dist'],
+const DEFAULT_EXTRACT_CONFIG: ExtractOptions = {
+  include: ['src/**/*.{ts,tsx,js,jsx,vue,hbs,gjs,gts}'],
+  ignore: ['node_modules/**', 'dist/**', '**/*.test.*', '**/*.spec.*'],
   outFile: 'src/lang/en.json',
-  debug: false,
-  hotReload: true,
-  extractOnBuild: false,
-
-  // Extract 相关配置
   idInterpolationPattern: '[sha512:contenthash:base64:6]',
   throws: true,
+};
 
-  // Compile 相关配置
-  compileAst: true,
-  compileFolder: 'src/lang',
-  outFolder: 'src/compiled-lang',
+/**
+ * 默认编译配置
+ */
+const DEFAULT_COMPILE_CONFIG: CompileOptions = {
+  inputDir: 'src/lang',
+  outputDir: 'src/compiled-lang',
+};
+
+/**
+ * 默认开发配置
+ */
+const DEFAULT_DEV_CONFIG: DevOptions = {
+  hotReload: true,
+  autoExtract: true,
+  debounceTime: 300,
+};
+
+/**
+ * 默认构建配置
+ */
+const DEFAULT_BUILD_CONFIG: BuildOptions = {
+  extractOnBuild: true,
   compileOnBuild: true,
+};
+
+/**
+ * 默认调试配置
+ */
+const DEFAULT_DEBUG = false;
+
+/**
+ * 完整默认配置
+ */
+const DEFAULT_CONFIG: VitePluginFormatJSOptions = {
+  extract: DEFAULT_EXTRACT_CONFIG,
+  compile: DEFAULT_COMPILE_CONFIG,
+  dev: DEFAULT_DEV_CONFIG,
+  build: DEFAULT_BUILD_CONFIG,
+  debug: DEFAULT_DEBUG,
 };
 
 /**
@@ -31,11 +67,26 @@ const DEFAULT_CONFIG: Readonly<FormatJSPluginOptions> = {
  * @returns 完整的配置对象
  */
 export function resolveConfig(
-  userConfig: Partial<FormatJSPluginOptions> = {}
-): FormatJSPluginOptions {
+  userConfig: UserFormatJSConfig = {}
+): VitePluginFormatJSOptions {
   return {
-    ...DEFAULT_CONFIG,
-    ...userConfig,
+    extract: {
+      ...DEFAULT_EXTRACT_CONFIG,
+      ...userConfig.extract,
+    },
+    compile: {
+      ...DEFAULT_COMPILE_CONFIG,
+      ...userConfig.compile,
+    },
+    dev: {
+      ...DEFAULT_DEV_CONFIG,
+      ...userConfig.dev,
+    },
+    build: {
+      ...DEFAULT_BUILD_CONFIG,
+      ...userConfig.build,
+    },
+    debug: userConfig.debug ?? DEFAULT_DEBUG,
   };
 }
 
@@ -44,37 +95,11 @@ export function resolveConfig(
  * @param config 完整配置对象
  * @returns Extract 相关配置
  */
-export function getExtractConfig(
-  config: FormatJSPluginOptions
-): ExtractCLIOptions {
-  const {
-    // 插件特有选项，需要排除
-    include: _include,
-    debug: _debug,
-    hotReload: _hotReload,
-    extractOnBuild: _extractOnBuild,
-    compileFolder: _compileFolder,
-    compileOnBuild: _compileOnBuild,
-    compileAst: _compileAst,
-    skipErrors: _skipErrors,
-    compileFormat: _compileFormat,
-    pseudoLocale: _pseudoLocale,
-    ignoreTag: _ignoreTag,
-    outFolder: _outFolder,
+export function getExtractConfig(config: ExtractOptions): ExtractCLIOptions {
+  const { include: _include, ...extractConfig } = config;
 
-    // 重命名 extractFormat 为 format
-    extractFormat,
-    // 重命名 extractAst 为 ast
-    extractAst,
-
-    ...extractConfig
-  } = config;
-
-  return {
-    ...extractConfig,
-    format: extractFormat,
-    ast: extractAst,
-  };
+  // include 字段由插件内部处理，不传递给 formatjs
+  return extractConfig;
 }
 
 /**
@@ -82,20 +107,51 @@ export function getExtractConfig(
  * @param config 完整配置对象
  * @returns Compile 相关配置
  */
-export function getCompileConfig(config: FormatJSPluginOptions): CompileOpts {
+export function getCompileConfig(config: CompileOptions): CompileOpts {
   const {
-    compileAst: ast,
-    skipErrors,
-    compileFormat: format,
-    pseudoLocale,
-    ignoreTag,
+    inputDir: _inputDir,
+    outputDir: _outputDir,
+    ...compileConfig
   } = config;
 
-  return {
-    ast,
-    skipErrors,
-    format,
-    pseudoLocale,
-    ignoreTag,
-  };
+  return compileConfig;
 }
+
+/**
+ * 验证配置是否合法
+ * @param config 配置对象
+ * @throws 如果配置不合法则抛出错误
+ */
+export function validateConfig(config: VitePluginFormatJSOptions): void {
+  // 验证 extract 配置
+  if (!config.extract.include || config.extract.include.length === 0) {
+    throw new Error('extract.include 必须是非空数组');
+  }
+
+  if (!config.extract.outFile) {
+    throw new Error('extract.outFile 不能为空');
+  }
+
+  // 验证 compile 配置
+  if (!config.compile.inputDir) {
+    throw new Error('compile.inputDir 不能为空');
+  }
+
+  if (!config.compile.outputDir) {
+    throw new Error('compile.outputDir 不能为空');
+  }
+
+  // 验证 dev 配置
+  if (config.dev.debounceTime < 0) {
+    throw new Error('dev.debounceTime 必须大于等于 0');
+  }
+}
+
+// 导出默认配置常量
+export {
+  DEFAULT_BUILD_CONFIG,
+  DEFAULT_COMPILE_CONFIG,
+  DEFAULT_CONFIG,
+  DEFAULT_DEV_CONFIG,
+  DEFAULT_EXTRACT_CONFIG,
+};

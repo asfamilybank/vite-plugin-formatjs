@@ -5,16 +5,16 @@ import {
   compileMessages,
   isMessageFile,
 } from ':core/compile';
-import { resolveConfig } from ':core/config';
+import { resolveConfig, validateConfig } from ':core/config';
 import { extractMessages, isFileInInclude } from ':core/extract';
-import type { FormatJSPluginOptions } from ':core/types';
+import type { UserFormatJSConfig } from ':core/types';
 import { PLUGIN_NAME } from ':utils/constant';
-import { logger } from ':utils/logger';
+import { logger, LogLevel } from ':utils/logger';
 
 /**
  * FormatJS Vite 插件
  */
-export function formatjs(options: Partial<FormatJSPluginOptions> = {}): Plugin {
+export function formatjs(options: UserFormatJSConfig = {}): Plugin {
   const config = resolveConfig(options);
   let _resolvedConfig: ResolvedConfig;
 
@@ -35,16 +35,12 @@ export function formatjs(options: Partial<FormatJSPluginOptions> = {}): Plugin {
     extractionInProgress = true;
 
     try {
-      const result = await extractMessages(config);
+      const duration = await extractMessages(config.extract);
 
-      if (config.debug) {
-        logger.debug('防抖提取消息完成', {
-          pendingFiles: Array.from(pendingExtractFiles),
-          messageCount: Object.keys(result.messages).length,
-          duration: result.duration,
-          isChanged: result.isChanged,
-        });
-      }
+      logger.debug('防抖提取消息完成', {
+        pendingFiles: Array.from(pendingExtractFiles),
+        duration,
+      });
     } catch (error) {
       logger.error('防抖提取消息失败', { error });
     } finally {
@@ -56,95 +52,83 @@ export function formatjs(options: Partial<FormatJSPluginOptions> = {}): Plugin {
   /**
    * 编译消息文件（直接编译，无需防抖）
    */
-  async function compileMessageFileDirectly(file: string) {
+  async function compileMessageFileDirectly(file: string): Promise<number> {
     try {
-      const result = await compileMessageFile(file, config);
+      const duration = await compileMessageFile(file, config.compile);
 
-      if (config.debug) {
-        logger.debug('消息文件编译完成', {
-          outFile: result.outFile,
-          duration: result.duration,
-        });
-      }
-      logger.info(
-        `消息文件编译完成: ${result.outFile}，耗时 ${result.duration}ms`
-      );
-      return result;
+      logger.debug('消息文件编译完成', {
+        file,
+        duration,
+      });
+      logger.success(`消息文件编译完成，耗时 ${duration}ms`);
+      return duration;
     } catch (error) {
       logger.error('编译消息文件失败', { file, error });
-      return { success: false, messageFile: file, outFile: '', duration: 0 };
+      return 0;
     }
   }
 
   return {
     name: PLUGIN_NAME,
 
-    configResolved(config) {
-      _resolvedConfig = config;
+    configResolved(resolvedConfig) {
+      _resolvedConfig = resolvedConfig;
+
+      // 验证配置
+      try {
+        validateConfig(config);
+        if (config.debug) logger.updateConfig({ level: LogLevel.DEBUG });
+      } catch (error) {
+        logger.error('插件配置验证失败', { error });
+        throw error;
+      }
     },
 
     async buildStart() {
       // 构建开始时提取消息（如果启用）
-      if (config.extractOnBuild || _resolvedConfig.command === 'serve') {
+      if (config.build.extractOnBuild || _resolvedConfig.command === 'serve') {
         try {
-          const result = await extractMessages(config);
-          logger.success(`构建开始时提取消息完成，耗时 ${result.duration}ms`);
+          const duration = await extractMessages(config.extract);
+          logger.success(`构建开始时提取消息完成，耗时 ${duration}ms`);
         } catch (error) {
           logger.error('构建开始时提取消息失败', { error });
         }
       }
 
       // 构建开始时编译消息（如果启用）
-      if (config.compileOnBuild || _resolvedConfig.command === 'serve') {
-        if (config.compileFolder) {
-          try {
-            const result = await compileMessages(config);
-            if (result.compiledCount > 0) {
-              logger.success(
-                `构建开始时编译消息完成，处理了 ${result.compiledCount} 个文件，耗时 ${result.duration}ms`
-              );
-            }
-          } catch (error) {
-            logger.error('构建开始时编译消息失败', { error });
-          }
+      if (config.build.compileOnBuild || _resolvedConfig.command === 'serve') {
+        try {
+          const duration = await compileMessages(config.compile);
+          logger.success(`构建开始时编译消息完成，耗时 ${duration}ms`);
+        } catch (error) {
+          logger.error('构建开始时编译消息失败', { error });
         }
-      }
-
-      // 在 buildStart 中添加配置检查
-      if (config.compileOnBuild && !config.compileFolder) {
-        logger.warn('启用了 compileOnBuild 但未配置 compileFolder');
-        return;
       }
     },
 
     async handleHotUpdate(ctx) {
       const { file } = ctx;
 
-      // 检查是否是消息文件（extract 的产物）
+      // 检查是否是消息文件（需要编译的翻译文件）
       if (isMessageFile(file, config)) {
-        if (config.debug) {
-          logger.debug('检测到消息文件变化', { file });
-        }
+        logger.debug('检测到消息文件变化', { file });
 
         // 直接编译，无需防抖
-        const { outFile, success } = await compileMessageFileDirectly(file);
+        await compileMessageFileDirectly(file);
 
-        // 热更新编译后的消息文件
-        if (outFile) {
-          if (success) {
-            // 让 Vite 重新扫描编译后的文件
-            const module = ctx.server.moduleGraph.getModuleById(outFile);
-            return module ? [module] : [];
-          }
-        }
-        return [];
+        // 使用 vite 默认 HMR 行为
+        return;
       }
 
       // 检查文件是否匹配 include 模式（用于 extract）
-      if (isFileInInclude(file, config.include ?? [])) {
-        if (config.debug) {
-          logger.debug('检测到源代码文件变化', { file });
-        }
+      if (
+        isFileInInclude(
+          file,
+          config.extract.include,
+          config.extract.ignore ?? []
+        )
+      ) {
+        logger.debug('检测到源代码文件变化', { file });
 
         // 将文件添加到待提取队列
         pendingExtractFiles.add(file);
@@ -154,16 +138,17 @@ export function formatjs(options: Partial<FormatJSPluginOptions> = {}): Plugin {
           clearTimeout(extractDebounceTimer);
         }
 
-        // 设置新的提取防抖计时器（延迟 300ms）
+        // 设置新的提取防抖计时器
         extractDebounceTimer = setTimeout(() => {
           void debouncedExtract();
-        }, 300);
+        }, config.dev.debounceTime);
 
-        // 返回空数组，让 Vite 跳过默认的热更新处理
-        return [];
+        // 使用 vite 默认 HMR 行为
+        return;
       }
 
-      return [];
+      // 其他文件使用默认行为
+      return;
     },
 
     buildEnd() {
@@ -175,10 +160,7 @@ export function formatjs(options: Partial<FormatJSPluginOptions> = {}): Plugin {
 
       pendingExtractFiles.clear();
       extractionInProgress = false;
-
-      if (config.debug) {
-        logger.debug('构建结束，已清理所有资源');
-      }
+      logger.debug('构建结束，已清理所有资源');
     },
   };
 }

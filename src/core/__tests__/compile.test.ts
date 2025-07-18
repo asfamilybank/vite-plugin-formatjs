@@ -1,6 +1,6 @@
 import { promises as fs, PathLike } from 'node:fs';
 
-import { compile } from '@formatjs/cli-lib';
+import { compile, compileAndWrite } from '@formatjs/cli-lib';
 import {
   afterEach,
   beforeEach,
@@ -15,12 +15,19 @@ import {
   compileMessageFile,
   compileMessages,
   findMessageFiles,
-  generateOutputPath,
   isMessageFile,
 } from '../compile';
-import type { FormatJSPluginOptions } from '../types';
 
-// Mock external dependencies
+// 导入 mocked 依赖
+import type { CompileOptions, VitePluginFormatJSOptions } from ':core/types';
+import { logger } from ':utils/logger';
+
+// Mock 外部依赖
+vi.mock('@formatjs/cli-lib', () => ({
+  compile: vi.fn(),
+  compileAndWrite: vi.fn(),
+}));
+
 vi.mock('node:fs', () => ({
   promises: {
     access: vi.fn(),
@@ -31,16 +38,12 @@ vi.mock('node:fs', () => ({
   },
 }));
 
-vi.mock('@formatjs/cli-lib', () => ({
-  compile: vi.fn(),
-}));
-
 vi.mock(':utils/logger', () => ({
   logger: {
     debug: vi.fn(),
+    error: vi.fn(),
     info: vi.fn(),
     success: vi.fn(),
-    error: vi.fn(),
   },
 }));
 
@@ -50,15 +53,10 @@ const mockedFs = vi.mocked(
   }
 );
 const mockedCompile = vi.mocked(compile);
+const mockedCompileAndWrite = vi.mocked(compileAndWrite);
+const mockedLogger = vi.mocked(logger);
 
 describe('compile.ts', () => {
-  const mockOptions: FormatJSPluginOptions = {
-    include: ['src/**/*.ts'],
-    outFile: 'lang/messages.json',
-    compileFolder: 'dist/lang',
-    debug: false,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -67,211 +65,268 @@ describe('compile.ts', () => {
     vi.resetAllMocks();
   });
 
-  describe('isMessageFile', () => {
-    it('应该正确识别消息文件', () => {
-      const result = isMessageFile('lang/en.json', mockOptions);
-      expect(result).toBe(true);
+  describe('isMessageFile 函数', () => {
+    const mockConfig: VitePluginFormatJSOptions = {
+      extract: {
+        include: ['src/**/*.ts'],
+        outFile: 'src/lang/en.json',
+      },
+      compile: {
+        inputDir: 'src/lang',
+        outputDir: 'src/compiled-lang',
+      },
+      dev: {
+        hotReload: true,
+        autoExtract: true,
+        debounceTime: 300,
+      },
+      build: {
+        extractOnBuild: true,
+        compileOnBuild: true,
+      },
+      debug: false,
+    };
+
+    it('应该识别消息目录中的 JSON 文件', () => {
+      expect(isMessageFile('src/lang/zh.json', mockConfig)).toBe(true);
+      expect(isMessageFile('src/lang/ja.json', mockConfig)).toBe(true);
     });
 
-    it('应该忽略主消息文件', () => {
-      const result = isMessageFile('lang/messages.json', mockOptions);
-      expect(result).toBe(false);
+    it('应该排除不在消息目录中的文件', () => {
+      expect(isMessageFile('src/components/Button.tsx', mockConfig)).toBe(
+        false
+      );
+      expect(isMessageFile('dist/lang/zh.json', mockConfig)).toBe(false);
     });
 
-    it('应该忽略非JSON文件', () => {
-      const result = isMessageFile('lang/en.txt', mockOptions);
-      expect(result).toBe(false);
+    it('应该排除非 JSON 文件', () => {
+      expect(isMessageFile('src/lang/readme.md', mockConfig)).toBe(false);
+      expect(isMessageFile('src/lang/config.txt', mockConfig)).toBe(false);
     });
 
-    it('应该忽略其他目录的文件', () => {
-      const result = isMessageFile('src/en.json', mockOptions);
-      expect(result).toBe(false);
+    it('应该排除主消息文件', () => {
+      expect(isMessageFile('src/lang/en.json', mockConfig)).toBe(false);
     });
 
-    it('应该在缺少outFile时返回false', () => {
-      const options = { ...mockOptions, outFile: undefined };
-      const result = isMessageFile('lang/en.json', options);
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('generateOutputPath', () => {
-    it('应该生成正确的输出路径', () => {
-      const result = generateOutputPath('lang/en.json', mockOptions);
-      expect(result).toBe('dist/lang/en.json');
-    });
-
-    it('应该在缺少compileFolder时抛出错误', () => {
-      const options = { ...mockOptions, compileFolder: undefined };
-      expect(() => generateOutputPath('lang/en.json', options)).toThrow(
-        'compileFolder 配置是必需的'
+    it('应该在缺少 extract.outFile 时返回 false', () => {
+      const configWithoutOutFile = {
+        ...mockConfig,
+        extract: {
+          ...mockConfig.extract,
+          outFile: '',
+        },
+      };
+      expect(isMessageFile('src/lang/zh.json', configWithoutOutFile)).toBe(
+        false
       );
     });
   });
 
-  describe('findMessageFiles', () => {
-    it('应该找到有效的消息文件', async () => {
-      const mockFiles = ['en.json', 'zh.json', 'messages.json', 'invalid.txt'];
-      mockedFs.readdir.mockResolvedValue(mockFiles);
+  describe('findMessageFiles 函数', () => {
+    const mockCompileOptions: CompileOptions = {
+      inputDir: 'src/lang',
+      outputDir: 'src/compiled-lang',
+    };
 
-      // Mock valid JSON files
-      mockedFs.readFile.mockImplementation((filePath: string) => {
-        if (filePath.includes('en.json') || filePath.includes('zh.json')) {
-          return Promise.resolve('{"hello": "world"}');
-        }
-        return Promise.resolve('invalid json');
-      });
+    it('应该找到目录中的所有 JSON 文件', async () => {
+      mockedFs.readdir.mockResolvedValue(['zh.json', 'ja.json', 'fr.json']);
+      mockedFs.readFile
+        .mockResolvedValueOnce('{"msg": "hello"}')
+        .mockResolvedValueOnce('{"msg": "こんにちは"}')
+        .mockResolvedValueOnce('{"msg": "bonjour"}');
 
-      const result = await findMessageFiles('lang', mockOptions);
+      const files = await findMessageFiles(mockCompileOptions);
 
-      expect(result).toEqual(['lang/en.json', 'lang/zh.json']);
+      expect(files).toEqual([
+        'src/lang/zh.json',
+        'src/lang/ja.json',
+        'src/lang/fr.json',
+      ]);
+      expect(mockedFs.readdir).toHaveBeenCalledWith('src/lang');
     });
 
-    it('应该忽略无效的JSON文件', async () => {
-      const mockFiles = ['en.json', 'invalid.json'];
-      mockedFs.readdir.mockResolvedValue(mockFiles);
+    it('应该过滤掉无效的 JSON 文件', async () => {
+      mockedFs.readdir.mockResolvedValue([
+        'valid.json',
+        'invalid.json',
+        'config.txt',
+      ]);
+      mockedFs.readFile
+        .mockResolvedValueOnce('{"msg": "valid"}')
+        .mockRejectedValueOnce(new Error('Invalid JSON'));
 
-      mockedFs.readFile.mockImplementation((filePath: string) => {
-        if (filePath.includes('en.json')) {
-          return Promise.resolve('{"hello": "world"}');
-        }
-        return Promise.reject(new Error('Invalid JSON'));
-      });
+      const files = await findMessageFiles(mockCompileOptions);
 
-      const result = await findMessageFiles('lang', mockOptions);
-
-      expect(result).toEqual(['lang/en.json']);
+      expect(files).toEqual(['src/lang/valid.json']);
     });
 
-    it('应该在读取目录失败时抛出错误', async () => {
-      mockedFs.readdir.mockRejectedValue(new Error('Directory not found'));
-
-      await expect(findMessageFiles('lang', mockOptions)).rejects.toThrow(
-        '无法读取消息目录 lang'
-      );
-    });
-  });
-
-  describe('compileMessageFile', () => {
-    it('应该成功编译消息文件', async () => {
-      const messageFile = 'lang/en.json';
-      const compiledContent = 'compiled content';
-
-      mockedFs.access.mockResolvedValue(undefined);
-      mockedCompile.mockResolvedValue(compiledContent);
-      mockedFs.mkdir.mockResolvedValue(undefined);
-      mockedFs.writeFile.mockResolvedValue(undefined);
-
-      const result = await compileMessageFile(messageFile, mockOptions);
-
-      expect(result).toEqual({
-        messageFile,
-        outFile: 'dist/lang/en.json',
-        duration: expect.any(Number) as number,
-        success: true,
-      });
-
-      expect(mockedCompile).toHaveBeenCalledWith(
-        [messageFile],
-        expect.any(Object)
-      );
-      expect(mockedFs.writeFile).toHaveBeenCalledWith(
-        'dist/lang/en.json',
-        compiledContent,
-        'utf8'
-      );
-    });
-
-    it('应该在文件不存在时返回失败结果', async () => {
-      const messageFile = 'lang/en.json';
-
-      mockedFs.access.mockRejectedValue(new Error('File not found'));
-
-      const result = await compileMessageFile(messageFile, mockOptions);
-
-      expect(result).toEqual({
-        messageFile,
-        outFile: 'dist/lang/en.json',
-        duration: expect.any(Number) as number,
-        success: false,
-      });
-    });
-
-    it('应该在编译失败时返回失败结果', async () => {
-      const messageFile = 'lang/en.json';
-
-      mockedFs.access.mockResolvedValue(undefined);
-      mockedCompile.mockRejectedValue(new Error('Compile failed'));
-
-      const result = await compileMessageFile(messageFile, mockOptions);
-
-      expect(result).toEqual({
-        messageFile,
-        outFile: 'dist/lang/en.json',
-        duration: expect.any(Number) as number,
-        success: false,
-      });
-    });
-  });
-
-  describe('compileMessages', () => {
-    it('应该成功编译所有消息文件', async () => {
-      const mockFiles = ['en.json', 'zh.json'];
-      mockedFs.readdir.mockResolvedValue(mockFiles);
-      mockedFs.readFile.mockResolvedValue('{"hello": "world"}');
-      mockedFs.access.mockResolvedValue(undefined);
-      mockedCompile.mockResolvedValue('compiled content');
-      mockedFs.mkdir.mockResolvedValue(undefined);
-      mockedFs.writeFile.mockResolvedValue(undefined);
-
-      const result = await compileMessages(mockOptions);
-
-      expect(result).toEqual({
-        results: [
-          {
-            messageFile: 'lang/en.json',
-            outFile: 'dist/lang/en.json',
-            duration: expect.any(Number) as number,
-            success: true,
-          },
-          {
-            messageFile: 'lang/zh.json',
-            outFile: 'dist/lang/zh.json',
-            duration: expect.any(Number) as number,
-            success: true,
-          },
-        ],
-        duration: expect.any(Number) as number,
-        compiledCount: 2,
-      });
-    });
-
-    it('应该在没有消息文件时返回空结果', async () => {
+    it('应该处理空目录', async () => {
       mockedFs.readdir.mockResolvedValue([]);
 
-      const result = await compileMessages(mockOptions);
+      const files = await findMessageFiles(mockCompileOptions);
 
-      expect(result).toEqual({
-        results: [],
+      expect(files).toEqual([]);
+    });
+
+    it('应该在目录不存在时抛出错误', async () => {
+      mockedFs.readdir.mockRejectedValue(new Error('Directory not found'));
+
+      await expect(findMessageFiles(mockCompileOptions)).rejects.toThrow(
+        '无法读取消息目录 src/lang: Error: Directory not found'
+      );
+    });
+  });
+
+  describe('compileMessageFile 函数', () => {
+    const mockCompileOptions: CompileOptions = {
+      inputDir: 'src/lang',
+      outputDir: 'src/compiled-lang',
+    };
+
+    beforeEach(() => {
+      mockedFs.access.mockResolvedValue(undefined);
+      mockedFs.mkdir.mockResolvedValue(undefined);
+      mockedFs.writeFile.mockResolvedValue(undefined);
+    });
+
+    it('应该成功编译单个消息文件', async () => {
+      const duration = await compileMessageFile(
+        'src/lang/zh.json',
+        mockCompileOptions
+      );
+
+      expect(typeof duration).toBe('number');
+      expect(duration).toBeGreaterThanOrEqual(0);
+      expect(mockedCompileAndWrite).toHaveBeenCalledWith(
+        ['src/lang/zh.json'],
+        {}
+      );
+    });
+
+    it('应该记录调试信息', async () => {
+      mockedCompileAndWrite.mockResolvedValue();
+
+      await compileMessageFile('src/lang/zh.json', mockCompileOptions);
+
+      expect(mockedLogger.debug).toHaveBeenCalledWith('开始编译消息文件', {
+        messageFile: 'src/lang/zh.json',
+        outFile: 'src/compiled-lang/zh.json',
+      });
+      expect(mockedLogger.debug).toHaveBeenCalledWith('消息文件编译完成', {
+        messageFile: 'src/lang/zh.json',
+        outFile: 'src/compiled-lang/zh.json',
         duration: expect.any(Number) as number,
-        compiledCount: 0,
       });
     });
 
-    it('应该在缺少compileFolder时抛出错误', async () => {
-      const options = { ...mockOptions, compileFolder: undefined };
+    it('应该在文件不存在时记录错误并返回 0', async () => {
+      mockedFs.access.mockRejectedValue(new Error('File not found'));
 
-      await expect(compileMessages(options)).rejects.toThrow(
-        'compileFolder 配置是必需的'
+      const duration = await compileMessageFile(
+        'src/lang/missing.json',
+        mockCompileOptions
+      );
+
+      expect(duration).toBe(0);
+      expect(mockedLogger.error).toHaveBeenCalledWith('消息文件编译失败', {
+        messageFile: 'src/lang/missing.json',
+        outFile: 'src/compiled-lang/missing.json',
+        error: expect.any(Error) as Error,
+      });
+    });
+
+    it('应该在编译失败时记录错误并返回 0', async () => {
+      mockedCompileAndWrite.mockRejectedValue(new Error('Compile failed'));
+
+      const duration = await compileMessageFile(
+        'src/lang/zh.json',
+        mockCompileOptions
+      );
+
+      expect(duration).toBe(0);
+      expect(mockedLogger.error).toHaveBeenCalledWith('消息文件编译失败', {
+        messageFile: 'src/lang/zh.json',
+        outFile: 'src/compiled-lang/zh.json',
+        error: expect.any(Error) as Error,
+      });
+    });
+  });
+
+  describe('compileMessages 函数', () => {
+    const mockCompileOptions: CompileOptions = {
+      inputDir: 'src/lang',
+      outputDir: 'src/compiled-lang',
+    };
+
+    beforeEach(() => {
+      mockedFs.readdir.mockResolvedValue(['zh.json', 'ja.json']);
+      mockedFs.readFile
+        .mockResolvedValueOnce('{"msg": "hello"}')
+        .mockResolvedValueOnce('{"msg": "こんにちは"}');
+      mockedFs.mkdir.mockResolvedValue(undefined);
+      mockedFs.writeFile.mockResolvedValue(undefined);
+    });
+
+    it('应该成功编译所有消息文件', async () => {
+      mockedCompile
+        .mockResolvedValueOnce('{"msg":"hello"}')
+        .mockResolvedValueOnce('{"msg":"こんにちは"}');
+
+      const duration = await compileMessages(mockCompileOptions);
+
+      expect(typeof duration).toBe('number');
+      expect(duration).toBeGreaterThanOrEqual(0);
+      expect(mockedCompile).toHaveBeenCalledTimes(2);
+      expect(mockedFs.writeFile).toHaveBeenCalledTimes(2);
+      expect(mockedLogger.success).toHaveBeenCalledWith(
+        expect.stringContaining('批量编译完成')
       );
     });
 
-    it('应该在缺少outFile时抛出错误', async () => {
-      const options = { ...mockOptions, outFile: undefined };
+    it('应该记录调试信息', async () => {
+      mockedCompile
+        .mockResolvedValueOnce('{"msg":"hello"}')
+        .mockResolvedValueOnce('{"msg":"こんにちは"}');
 
-      await expect(compileMessages(options)).rejects.toThrow(
-        'outFile 配置是必需的'
+      await compileMessages(mockCompileOptions);
+
+      expect(mockedLogger.debug).toHaveBeenCalledWith(
+        '开始批量编译消息文件',
+        mockCompileOptions
       );
+    });
+
+    it('应该创建输出目录', async () => {
+      mockedCompile
+        .mockResolvedValueOnce('{"msg":"hello"}')
+        .mockResolvedValueOnce('{"msg":"こんにちは"}');
+
+      await compileMessages(mockCompileOptions);
+
+      expect(mockedFs.mkdir).toHaveBeenCalledWith('src/compiled-lang', {
+        recursive: true,
+      });
+    });
+
+    it('应该在编译失败时记录错误并抛出异常', async () => {
+      mockedCompile.mockRejectedValue(new Error('Batch compile failed'));
+
+      await expect(compileMessages(mockCompileOptions)).rejects.toThrow(
+        'Batch compile failed'
+      );
+      expect(mockedLogger.error).toHaveBeenCalledWith('批量编译消息文件失败', {
+        error: expect.any(Error) as Error,
+      });
+    });
+
+    it('应该处理空的消息文件目录', async () => {
+      mockedFs.readdir.mockResolvedValue([]);
+
+      const duration = await compileMessages(mockCompileOptions);
+
+      expect(duration).toBeGreaterThanOrEqual(0);
+      expect(mockedCompile).not.toHaveBeenCalled();
+      expect(mockedFs.writeFile).not.toHaveBeenCalled();
     });
   });
 });
