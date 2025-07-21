@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "include": [],
+  "compilerOptions": {},
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

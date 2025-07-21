@@ -18,8 +18,6 @@ vi.mock('../../utils/logger', () => ({
   },
 }));
 
-
-
 const mockedExtractAndWrite = vi.mocked(extractAndWrite);
 const mockedLogger = vi.mocked(logger);
 
@@ -96,7 +94,7 @@ describe('extract.ts', () => {
   describe('extractMessages 函数', () => {
     const mockExtractOptions: ExtractOptions = {
       include: ['src/**/*.{ts,tsx}'],
-      outFile: 'src/locales/messages.json',
+      outFile: 'src/i18n/lang/en.json',
       idInterpolationPattern: '[sha512:contenthash:base64:6]',
       throws: true,
     };

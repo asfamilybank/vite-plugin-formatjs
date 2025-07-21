@@ -19,7 +19,7 @@ describe('config.ts', () => {
       expect(DEFAULT_EXTRACT_CONFIG).toEqual({
         include: ['src/**/*.{ts,tsx,js,jsx,vue,hbs,gjs,gts}'],
         ignore: ['node_modules/**', 'dist/**', '**/*.test.*', '**/*.spec.*'],
-        outFile: 'src/lang/en.json',
+        outFile: 'src/i18n/lang/en.json',
         idInterpolationPattern: '[sha512:contenthash:base64:6]',
         throws: true,
       });
@@ -27,8 +27,8 @@ describe('config.ts', () => {
 
     it('DEFAULT_COMPILE_CONFIG 应该包含正确的默认值', () => {
       expect(DEFAULT_COMPILE_CONFIG).toEqual({
-        inputDir: 'src/lang',
-        outputDir: 'src/compiled-lang',
+        inputDir: 'src/i18n/lang',
+        outputDir: 'src/i18n/compiled-lang',
       });
     });
 

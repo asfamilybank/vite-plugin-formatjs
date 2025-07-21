@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 
-import { extractAndWrite } from '@formatjs/cli-lib';
+import pkg from '@formatjs/cli-lib';
+import { globSync } from 'glob';
 import { minimatch } from 'minimatch';
 
 import { logger } from '../utils/logger';
@@ -8,6 +9,7 @@ import { logger } from '../utils/logger';
 import { getExtractConfig } from './config';
 import type { ExtractOptions } from './types';
 
+const { extractAndWrite } = pkg;
 
 /**
  * 检查文件是否在 include 范围内
@@ -37,14 +39,20 @@ export async function extractMessages(
     throw new Error('extract.include 和 extract.outFile 是必需的配置项');
   }
 
-  logger.debug('开始提取消息', {
-    include: options.include,
-    outFile: options.outFile,
-  });
+  logger.debug('开始提取消息', options);
+
+  const files: string[] = [];
+  if (options.include.length) {
+    files.push(
+      ...globSync(options.include, {
+        ignore: options.ignore,
+      })
+    );
+  }
 
   // 调用 @formatjs/cli-lib 的 extract 函数
   const formatJSOptions = getExtractConfig(options);
-  await extractAndWrite(options.include, formatJSOptions);
+  await extractAndWrite(files, formatJSOptions);
 
   return Date.now() - startTime;
 }

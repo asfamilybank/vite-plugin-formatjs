@@ -1,12 +1,14 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 
-import { compile, compileAndWrite } from '@formatjs/cli-lib';
+import pkg from '@formatjs/cli-lib';
 
-import { logger } from '../utils/logger'; 
+import { logger } from '../utils/logger';
 
 import { getCompileConfig } from './config';
 import type { CompileOptions, VitePluginFormatJSOptions } from './types';
+
+const { compile, compileAndWrite } = pkg;
 
 /**
  * 发现消息目录下的所有消息文件
@@ -121,11 +123,16 @@ export async function compileMessages(
 
     const files = await findMessageFiles(options);
     const results = await Promise.all(
-      files.map(f => compile([f], compileConfig))
+      files.map(f => {
+        logger.debug('编译消息文件', f);
+        return compile([f], compileConfig);
+      })
     );
-    const outFiles = files.map(f =>
-      path.join(options.outputDir, path.basename(f))
-    );
+    const outFiles = files.map(f => {
+      const outFile = path.join(options.outputDir, path.basename(f));
+      logger.debug('编译消息文件输出', outFile);
+      return outFile;
+    });
 
     await Promise.all(
       outFiles.map((outFile, i) => fs.writeFile(outFile, results[i]!, 'utf8'))
@@ -133,7 +140,9 @@ export async function compileMessages(
 
     const duration = Date.now() - startTime;
 
-    logger.success(`批量编译完成，耗时 ${duration}ms`);
+    logger.debug(
+      `批量编译完成，编译文件 ${files.length} 个，耗时 ${duration}ms`
+    );
 
     return duration;
   } catch (error) {

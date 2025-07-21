@@ -1,0 +1,102 @@
+.App {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.App-header {
+  margin-bottom: 2rem;
+}
+
+.App-header h1 {
+  color: #646cff;
+  margin-bottom: 1rem;
+}
+
+.App-header p {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.App-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.demo-section {
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.demo-section h2 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.counter button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #646cff;
+  border-radius: 4px;
+  background-color: #646cff;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.counter button:hover {
+  background-color: #535bf2;
+}
+
+.counter .count {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  min-width: 50px;
+}
+
+.language-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.language-switcher button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.language-switcher button.active {
+  background-color: #646cff;
+  color: white;
+  border-color: #646cff;
+}
+
+.language-switcher button:hover:not(.active) {
+  background-color: #f0f0f0;
+}
+
+.App-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  color: #666;
+  font-size: 0.9rem;
+}

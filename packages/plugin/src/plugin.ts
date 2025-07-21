@@ -14,7 +14,7 @@ import { logger, LogLevel } from './utils/logger';
 /**
  * FormatJS Vite 插件
  */
-export function formatjs(options: UserFormatJSConfig = {}): Plugin {
+export function formatjs(options: UserFormatJSConfig = {}) {
   const config = resolveConfig(options);
   let _resolvedConfig: ResolvedConfig;
 
@@ -85,6 +85,8 @@ export function formatjs(options: UserFormatJSConfig = {}): Plugin {
     },
 
     async buildStart() {
+      logger.debug('构建开始', config);
+
       // 构建开始时提取消息（如果启用）
       if (config.build.extractOnBuild || _resolvedConfig.command === 'serve') {
         try {
@@ -162,5 +164,5 @@ export function formatjs(options: UserFormatJSConfig = {}): Plugin {
       extractionInProgress = false;
       logger.debug('构建结束，已清理所有资源');
     },
-  };
+  } satisfies Plugin;
 }

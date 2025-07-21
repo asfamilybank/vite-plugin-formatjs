@@ -15,7 +15,7 @@ import type {
 const DEFAULT_EXTRACT_CONFIG: ExtractOptions = {
   include: ['src/**/*.{ts,tsx,js,jsx,vue,hbs,gjs,gts}'],
   ignore: ['node_modules/**', 'dist/**', '**/*.test.*', '**/*.spec.*'],
-  outFile: 'src/lang/en.json',
+  outFile: 'src/i18n/lang/en.json',
   idInterpolationPattern: '[sha512:contenthash:base64:6]',
   throws: true,
 };
@@ -24,8 +24,8 @@ const DEFAULT_EXTRACT_CONFIG: ExtractOptions = {
  * 默认编译配置
  */
 const DEFAULT_COMPILE_CONFIG: CompileOptions = {
-  inputDir: 'src/lang',
-  outputDir: 'src/compiled-lang',
+  inputDir: 'src/i18n/lang',
+  outputDir: 'src/i18n/compiled-lang',
 };
 
 /**

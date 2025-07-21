@@ -20,23 +20,23 @@ interface PluginReturn {
 }
 
 // Mock 外部依赖
-vi.mock('./core/config', () => ({
+vi.mock('../core/config', () => ({
   resolveConfig: vi.fn(),
   validateConfig: vi.fn(),
 }));
 
-vi.mock('./core/extract', () => ({
+vi.mock('../core/extract', () => ({
   extractMessages: vi.fn(),
   isFileInInclude: vi.fn(),
 }));
 
-vi.mock('./core/compile', () => ({
+vi.mock('../core/compile', () => ({
   compileMessageFile: vi.fn(),
   compileMessages: vi.fn(),
   isMessageFile: vi.fn(),
 }));
 
-vi.mock('./utils/logger', () => ({
+vi.mock('../utils/logger', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),
@@ -51,11 +51,9 @@ vi.mock('./utils/logger', () => ({
   },
 }));
 
-vi.mock('./utils/constant', () => ({
+vi.mock('../utils/constant', () => ({
   PLUGIN_NAME: 'vite-plugin-formatjs',
 }));
-
-
 
 const mockedResolveConfig = vi.mocked(resolveConfig);
 const mockedValidateConfig = vi.mocked(validateConfig);
