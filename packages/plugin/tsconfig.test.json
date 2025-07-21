@@ -3,8 +3,6 @@
   "compilerOptions": {
     "composite": true,
     "strictNullChecks": true,
-    "jsx": "react-jsx",
-    "esModuleInterop": true,
     "types": [
       "vitest/globals",
       "vitest/importMeta",

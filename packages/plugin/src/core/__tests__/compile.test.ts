@@ -11,16 +11,15 @@ import {
   vi,
 } from 'vitest';
 
+import { logger } from '../../utils/logger';
 import {
   compileMessageFile,
   compileMessages,
   findMessageFiles,
   isMessageFile,
 } from '../compile';
-
 // 导入 mocked 依赖
-import type { CompileOptions, VitePluginFormatJSOptions } from ':core/types';
-import { logger } from ':utils/logger';
+import type { CompileOptions, VitePluginFormatJSOptions } from '../types';
 
 // Mock 外部依赖
 vi.mock('@formatjs/cli-lib', () => ({
@@ -38,7 +37,7 @@ vi.mock('node:fs', () => ({
   },
 }));
 
-vi.mock(':utils/logger', () => ({
+vi.mock('../../utils/logger', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

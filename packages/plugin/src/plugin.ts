@@ -4,12 +4,12 @@ import {
   compileMessageFile,
   compileMessages,
   isMessageFile,
-} from ':core/compile';
-import { resolveConfig, validateConfig } from ':core/config';
-import { extractMessages, isFileInInclude } from ':core/extract';
-import type { UserFormatJSConfig } from ':core/types';
-import { PLUGIN_NAME } from ':utils/constant';
-import { logger, LogLevel } from ':utils/logger';
+} from './core/compile';
+import { resolveConfig, validateConfig } from './core/config';
+import { extractMessages, isFileInInclude } from './core/extract';
+import type { UserFormatJSConfig } from './core/types';
+import { PLUGIN_NAME } from './utils/constant';
+import { logger, LogLevel } from './utils/logger';
 
 /**
  * FormatJS Vite 插件

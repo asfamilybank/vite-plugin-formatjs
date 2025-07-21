@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
+  tsconfig: 'tsconfig.build.json',
   target: 'node16',
   dts: true,
   sourcemap: true,
@@ -16,4 +17,4 @@ export default defineConfig({
   banner: {
     js: '// vite-plugin-formatjs',
   },
-}); 
+});

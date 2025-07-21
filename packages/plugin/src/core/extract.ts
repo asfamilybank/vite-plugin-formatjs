@@ -3,10 +3,11 @@ import * as path from 'node:path';
 import { extractAndWrite } from '@formatjs/cli-lib';
 import { minimatch } from 'minimatch';
 
+import { logger } from '../utils/logger';
+
 import { getExtractConfig } from './config';
 import type { ExtractOptions } from './types';
 
-import { logger } from ':utils/logger';
 
 /**
  * 检查文件是否在 include 范围内

@@ -3,10 +3,11 @@ import * as path from 'node:path';
 
 import { compile, compileAndWrite } from '@formatjs/cli-lib';
 
+import { logger } from '../utils/logger'; 
+
 import { getCompileConfig } from './config';
 import type { CompileOptions, VitePluginFormatJSOptions } from './types';
 
-import { logger } from ':utils/logger';
 /**
  * 发现消息目录下的所有消息文件
  */

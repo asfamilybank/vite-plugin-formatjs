@@ -1,23 +1,24 @@
 import { extractAndWrite } from '@formatjs/cli-lib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from '../../utils/logger';
 import { extractMessages, isFileInInclude } from '../extract';
+// 导入 mocked 依赖
+import type { ExtractOptions } from '../types';
 
 // Mock 外部依赖
 vi.mock('@formatjs/cli-lib', () => ({
   extractAndWrite: vi.fn(),
 }));
 
-vi.mock(':utils/logger', () => ({
+vi.mock('../../utils/logger', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),
   },
 }));
 
-// 导入 mocked 依赖
-import type { ExtractOptions } from ':core/types';
-import { logger } from ':utils/logger';
+
 
 const mockedExtractAndWrite = vi.mocked(extractAndWrite);
 const mockedLogger = vi.mocked(logger);

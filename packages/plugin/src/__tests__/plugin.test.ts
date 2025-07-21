@@ -1,7 +1,16 @@
 import type { HmrContext, ResolvedConfig } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// 导入 mocked 依赖
+import {
+  compileMessageFile,
+  compileMessages,
+  isMessageFile,
+} from '../core/compile';
+import { resolveConfig, validateConfig } from '../core/config';
+import { extractMessages, isFileInInclude } from '../core/extract';
 import { formatjs } from '../plugin';
+import { logger } from '../utils/logger';
 
 interface PluginReturn {
   configResolved: (config: ResolvedConfig) => void;
@@ -11,23 +20,23 @@ interface PluginReturn {
 }
 
 // Mock 外部依赖
-vi.mock(':core/config', () => ({
+vi.mock('./core/config', () => ({
   resolveConfig: vi.fn(),
   validateConfig: vi.fn(),
 }));
 
-vi.mock(':core/extract', () => ({
+vi.mock('./core/extract', () => ({
   extractMessages: vi.fn(),
   isFileInInclude: vi.fn(),
 }));
 
-vi.mock(':core/compile', () => ({
+vi.mock('./core/compile', () => ({
   compileMessageFile: vi.fn(),
   compileMessages: vi.fn(),
   isMessageFile: vi.fn(),
 }));
 
-vi.mock(':utils/logger', () => ({
+vi.mock('./utils/logger', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),
@@ -42,19 +51,11 @@ vi.mock(':utils/logger', () => ({
   },
 }));
 
-vi.mock(':utils/constant', () => ({
+vi.mock('./utils/constant', () => ({
   PLUGIN_NAME: 'vite-plugin-formatjs',
 }));
 
-// 导入 mocked 依赖
-import {
-  compileMessageFile,
-  compileMessages,
-  isMessageFile,
-} from ':core/compile';
-import { resolveConfig, validateConfig } from ':core/config';
-import { extractMessages, isFileInInclude } from ':core/extract';
-import { logger } from ':utils/logger';
+
 
 const mockedResolveConfig = vi.mocked(resolveConfig);
 const mockedValidateConfig = vi.mocked(validateConfig);

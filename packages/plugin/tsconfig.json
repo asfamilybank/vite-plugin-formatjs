@@ -1,12 +1,7 @@
 {
   "files": [],
   "include": [],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      ":*": ["./src/*"]
-    }
-  },
+  "compilerOptions": {},
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.test.json" }

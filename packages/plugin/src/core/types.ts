@@ -3,7 +3,6 @@ import type { CompileOpts, ExtractCLIOptions } from '@formatjs/cli-lib';
 // 消息提取配置
 export interface ExtractOptions extends ExtractCLIOptions {
   include: string[]; // 输入文件 minimatch（必填）
-  // ExtractCLIOptions 包含了 outFile
 }
 
 // 消息编译配置
