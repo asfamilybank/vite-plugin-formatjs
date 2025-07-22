@@ -1,13 +1,14 @@
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import pkg from '@formatjs/cli-lib';
+import pkg, { extract, type MessageDescriptor } from '@formatjs/cli-lib';
 import { globSync } from 'glob';
 import { minimatch } from 'minimatch';
 
-import { logger } from '../utils/logger';
-
 import { getExtractConfig } from './config';
 import type { ExtractOptions } from './types';
+
+import { logger } from ':utils';
 
 const { extractAndWrite } = pkg;
 
@@ -42,4 +43,29 @@ export async function extractMessages(options: ExtractOptions): Promise<void> {
 
   const extractConfig = getExtractConfig(options);
   await extractAndWrite(files, extractConfig);
+}
+
+export async function extractMessage(
+  files: string[],
+  options: ExtractOptions
+): Promise<void> {
+  logger.debug('Extracting messages:', files);
+  const extractConfig = getExtractConfig(options);
+  const result = await extract(files, extractConfig);
+
+  const messages = JSON.parse(result) as MessageDescriptor[];
+  const existingMessages = await fs.readFile(options.outFile!, 'utf-8');
+  const existingMessagesJson = JSON.parse(existingMessages) as Record<
+    string,
+    string
+  >;
+
+  const mergedMessages = {
+    ...existingMessagesJson,
+    ...messages,
+  };
+
+  logger.debug('Merged messages:', mergedMessages);
+
+  await fs.writeFile(options.outFile!, JSON.stringify(mergedMessages, null, 2));
 }

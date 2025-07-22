@@ -12,44 +12,9 @@ import {
   isFileInInclude,
   type PartialConfig,
   type VitePluginFormatJSOptions,
+  extractMessage,
 } from ':core';
 import { PLUGIN_NAME, Timer, logger, setDebug } from ':utils';
-
-class DebounceFactory {
-  private _timer: ReturnType<typeof setTimeout> | null = null;
-  private _inProgress = false;
-  private readonly _callback: () => void | Promise<void>;
-  private readonly _delay: number;
-
-  constructor(callback: () => void | Promise<void>, delay: number) {
-    this._callback = callback;
-    this._delay = delay;
-  }
-
-  public start() {
-    this.clear();
-
-    this._timer = setTimeout(() => {
-      void (async () => {
-        if (this._inProgress) return;
-        this._inProgress = true;
-        try {
-          await this._callback();
-        } finally {
-          this._inProgress = false;
-        }
-      })();
-    }, this._delay);
-  }
-
-  public clear() {
-    if (this._timer) {
-      clearTimeout(this._timer);
-      this._timer = null;
-    }
-    this._inProgress = false;
-  }
-}
 
 /**
  * FormatJS Vite 插件
@@ -57,25 +22,45 @@ class DebounceFactory {
 export function formatjs(
   options: PartialConfig<VitePluginFormatJSOptions> = {}
 ) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let inProgress = false;
+  const pendingExtract = new Set<string>();
+
   const config = resolveConfig(options);
   validateConfig(config);
-  let extractDebounce: DebounceFactory;
+
+  function clear() {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    inProgress = false;
+    pendingExtract.clear();
+  }
+
+  async function debouncedExtract() {
+    if (inProgress) return;
+    inProgress = true;
+    try {
+      const timer = new Timer('Processing messages');
+      logger.progress('Processing messages...');
+      const extractFiles = [...pendingExtract];
+      logger.debug('Extracting messages:', extractFiles);
+      await extractMessage(extractFiles, config.extract);
+      await compileMessageFile(config.extract.outFile!, config.compile);
+      timer.end();
+      logger.success(`Processed messages in ${timer.duration}ms`);
+    } finally {
+      inProgress = false;
+      pendingExtract.clear();
+    }
+  }
 
   return {
     name: PLUGIN_NAME,
 
     configResolved() {
       setDebug(config.debug);
-
-      async function extract() {
-        const timer = new Timer('Processing messages');
-        logger.progress('Processing messages...');
-        await extractMessages(config.extract);
-        await compileMessageFile(config.extract.outFile!, config.compile);
-        timer.end();
-        logger.success(`Processed messages in ${timer.duration}ms`);
-      }
-      extractDebounce = new DebounceFactory(extract, config.debounceTime);
     },
 
     async buildStart() {
@@ -121,15 +106,19 @@ export function formatjs(
         isFileInInclude(file, config.extract.include, config.extract.ignore!)
       ) {
         logger.debug('Extracting messages', file);
-        extractDebounce.start();
+
+        clear();
+        pendingExtract.add(file);
+        timer = setTimeout(() => {
+          void debouncedExtract();
+        }, config.debounceTime);
         return;
       }
-
       return;
     },
 
     buildEnd() {
-      extractDebounce.clear();
+      clear();
     },
   } satisfies Plugin;
 }
