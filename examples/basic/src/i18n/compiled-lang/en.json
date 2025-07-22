@@ -1,16 +1,16 @@
 {
+  "0L+4nr": "Interactive Counter",
   "0p8YxN": "Current count: {count}",
+  "20g7q/": "Vite Plugin FormatJS Example",
+  "5U0k4c": "Date and Time Formatting",
+  "8mkx8h": "This is a basic example demonstrating vite-plugin-formatjs with React and react-intl.",
   "H/XqXJ": "Increase",
   "WauSRj": "Choose language:",
   "Z2Hzm9": "Note: This is a demo. In a real app, you would implement proper language switching logic.",
-  "app.description": "This is a basic example demonstrating vite-plugin-formatjs with React and react-intl.",
-  "app.footer": "Built with Vite, React, and vite-plugin-formatjs",
-  "app.title": "Vite Plugin FormatJS Example",
-  "demo.counter.title": "Interactive Counter",
-  "demo.datetime.current": "Current time: {time}",
-  "demo.datetime.title": "Date and Time Formatting",
-  "demo.datetime.today": "Today is {date}",
+  "aZhrzS": "Current time: {time}",
+  "dtKx3y": "Built with Vite, React, and vite-plugin-formatjs",
   "jLs6b9": "Decrease",
   "jm/spn": "Reset",
+  "n+pxpF": "Today is {date}",
   "y1a4OP": "Language Switcher"
 }

@@ -10,40 +10,27 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>
-          <FormattedMessage
-            id="app.title"
-            defaultMessage="Vite Plugin FormatJS Example"
-          />
+          <FormattedMessage defaultMessage="Vite Plugin FormatJS Example" />
         </h1>
         <p>
-          <FormattedMessage
-            id="app.description"
-            defaultMessage="This is a basic example demonstrating vite-plugin-formatjs with React and react-intl."
-          />
+          <FormattedMessage defaultMessage="This is a basic example demonstrating vite-plugin-formatjs with React and react-intl." />
         </p>
       </header>
 
       <main className="App-main">
         <section className="demo-section">
           <h2>
-            <FormattedMessage
-              id="demo.counter.title"
-              defaultMessage="Interactive Counter"
-            />
+            <FormattedMessage defaultMessage="Interactive Counter" />
           </h2>
           <Counter />
         </section>
 
         <section className="demo-section">
           <h2>
-            <FormattedMessage
-              id="demo.datetime.title"
-              defaultMessage="Date and Time Formatting"
-            />
+            <FormattedMessage defaultMessage="Date and Time Formatting" />
           </h2>
           <p>
             <FormattedMessage
-              id="demo.datetime.current"
               defaultMessage="Current time: {time}"
               values={{
                 time: intl.formatTime(new Date(), {
@@ -56,7 +43,6 @@ function App() {
           </p>
           <p>
             <FormattedMessage
-              id="demo.datetime.today"
               defaultMessage="Today is {date}"
               values={{
                 date: intl.formatDate(new Date(), {
@@ -76,10 +62,7 @@ function App() {
 
       <footer className="App-footer">
         <p>
-          <FormattedMessage
-            id="app.footer"
-            defaultMessage="Built with Vite, React, and vite-plugin-formatjs"
-          />
+          <FormattedMessage defaultMessage="Built with Vite, React, and vite-plugin-formatjs" />
         </p>
       </footer>
     </div>

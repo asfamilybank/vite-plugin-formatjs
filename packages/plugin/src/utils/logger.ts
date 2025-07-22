@@ -3,7 +3,7 @@ import { PLUGIN_NAME } from './constant';
 /**
  * 日志级别枚举
  */
-export enum LogLevel {
+enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
@@ -20,6 +20,7 @@ const COLORS = {
   YELLOW: '\x1b[33m',
   RED: '\x1b[31m',
   GREEN: '\x1b[32m',
+  CYAN: '\x1b[36m',
 } as const;
 
 /**
@@ -45,10 +46,10 @@ const LEVEL_EMOJIS = {
 /**
  * 日志配置接口
  */
-export interface LogConfig {
+interface LogConfig {
   level?: LogLevel;
   prefix?: string;
-  showTimestamp?: boolean;
+  showTime?: boolean;
   colors?: boolean;
   emojis?: boolean;
 }
@@ -59,7 +60,7 @@ export interface LogConfig {
 const DEFAULT_CONFIG: Required<LogConfig> = {
   level: LogLevel.INFO,
   prefix: `[${PLUGIN_NAME}]`,
-  showTimestamp: false,
+  showTime: true,
   colors: true,
   emojis: true,
 };
@@ -101,27 +102,39 @@ export class Logger {
     return `${color}${text}${COLORS.RESET}`;
   }
 
+  private formatTime(): string {
+    return this.config.showTime
+      ? `${this.colorize(new Date().toLocaleTimeString(), COLORS.GRAY)} `
+      : '';
+  }
+
   /**
    * 格式化消息
    */
-  private formatMessage(level: LogLevel, message: string): string {
-    const levelName = LogLevel[level].toLowerCase();
-    const emoji = this.config.emojis ? `${LEVEL_EMOJIS[level]} ` : '';
-    const timestamp = this.config.showTimestamp
-      ? `[${new Date().toISOString()}] `
-      : '';
-
-    // 构建级别标签
-    const levelLabel = `[${levelName.toUpperCase()}]`;
-    const coloredLevelLabel = this.colorize(levelLabel, LEVEL_COLORS[level]);
+  private formatMessage(
+    label: string,
+    emoji: string,
+    color: string,
+    message: string
+  ): string {
+    const _emoji = this.config.emojis ? emoji : '';
+    const timestamp = this.formatTime();
 
     // 构建前缀
-    const coloredPrefix = this.colorize(
-      this.config.prefix,
-      LEVEL_COLORS[level]
-    );
+    const coloredPrefix = this.colorize(this.config.prefix, COLORS.CYAN);
 
-    return `${timestamp}${emoji}${coloredPrefix} ${coloredLevelLabel} ${message}`;
+    const coloredLabel = this.colorize(`[${label.toUpperCase()}]`, color);
+
+    return `${timestamp}${coloredPrefix} ${_emoji}${coloredLabel} ${message}`;
+  }
+
+  private formatMessageWithLevel(level: LogLevel, message: string): string {
+    return this.formatMessage(
+      LogLevel[level].toLowerCase(),
+      LEVEL_EMOJIS[level],
+      LEVEL_COLORS[level],
+      message
+    );
   }
 
   /**
@@ -136,7 +149,10 @@ export class Logger {
    */
   debug(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.debug(this.formatMessage(LogLevel.DEBUG, message), ...args);
+      console.debug(
+        this.formatMessageWithLevel(LogLevel.DEBUG, message),
+        ...args
+      );
     }
   }
 
@@ -145,7 +161,10 @@ export class Logger {
    */
   info(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.info(this.formatMessage(LogLevel.INFO, message), ...args);
+      console.info(
+        this.formatMessageWithLevel(LogLevel.INFO, message),
+        ...args
+      );
     }
   }
 
@@ -154,7 +173,10 @@ export class Logger {
    */
   warn(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      console.warn(this.formatMessage(LogLevel.WARN, message), ...args);
+      console.warn(
+        this.formatMessageWithLevel(LogLevel.WARN, message),
+        ...args
+      );
     }
   }
 
@@ -163,7 +185,10 @@ export class Logger {
    */
   error(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      console.error(this.formatMessage(LogLevel.ERROR, message), ...args);
+      console.error(
+        this.formatMessageWithLevel(LogLevel.ERROR, message),
+        ...args
+      );
     }
   }
 
@@ -172,46 +197,39 @@ export class Logger {
    */
   success(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      const emoji = this.config.emojis ? '✅ ' : '';
-      const timestamp = this.config.showTimestamp
-        ? `[${new Date().toISOString()}] `
-        : '';
-      const coloredPrefix = this.colorize(this.config.prefix, COLORS.GREEN);
-      const coloredLevel = this.colorize('[SUCCESS]', COLORS.GREEN);
-      const formattedMessage = `${timestamp}${emoji}${coloredPrefix} ${coloredLevel} ${message}`;
+      const emoji = this.config.emojis ? '✅' : '';
 
-      console.log(formattedMessage, ...args);
+      console.log(
+        this.formatMessage('success', emoji, COLORS.GREEN, message),
+        ...args
+      );
     }
   }
 
-  /**
-   * 创建子logger
-   */
-  child(prefix: string): Logger {
-    return new Logger({
-      ...this.config,
-      prefix: `${this.config.prefix}:${prefix}`,
-    });
+  progress(message: string, ...args: unknown[]): void {
+    if (this.shouldLog(LogLevel.INFO)) {
+      console.log(
+        this.formatMessage('progress', '🔄', COLORS.BLUE, message),
+        ...args
+      );
+    }
   }
 }
 
 /**
- * 创建默认logger实例
- */
-export const createLogger = (config: LogConfig = {}): Logger => {
-  return new Logger(config);
-};
-
-/**
  * 默认logger实例
  */
-export const defaultLogger = createLogger();
+const defaultLogger = new Logger();
 
 /**
  * 重置默认logger配置
  */
 export const resetDefaultLogger = (): void => {
   defaultLogger.updateConfig(DEFAULT_CONFIG);
+};
+
+export const setDebug = (debug: boolean): void => {
+  defaultLogger.updateConfig({ level: debug ? LogLevel.DEBUG : LogLevel.INFO });
 };
 
 /**

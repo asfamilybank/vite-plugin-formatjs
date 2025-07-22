@@ -1,109 +1,96 @@
+import path from 'node:path';
+
 import type { Plugin, ResolvedConfig } from 'vite';
 
 import {
   compileMessageFile,
   compileMessages,
   isMessageFile,
-} from './core/compile';
-import { resolveConfig, validateConfig } from './core/config';
-import { extractMessages, isFileInInclude } from './core/extract';
-import type { UserFormatJSConfig } from './core/types';
-import { PLUGIN_NAME } from './utils/constant';
-import { logger, LogLevel } from './utils/logger';
+  resolveConfig,
+  validateConfig,
+  extractMessages,
+  isFileInInclude,
+} from ':core';
+import type { UserFormatJSConfig } from ':core';
+import { PLUGIN_NAME, Timer, logger, setDebug } from ':utils';
+
+class DebounceFactory {
+  private _timer: ReturnType<typeof setTimeout> | null = null;
+  private _inProgress = false;
+  private readonly _callback: () => void | Promise<void>;
+  private readonly _delay: number;
+
+  constructor(callback: () => void | Promise<void>, delay: number) {
+    this._callback = callback;
+    this._delay = delay;
+  }
+
+  public start() {
+    this.clear();
+
+    this._timer = setTimeout(() => {
+      void (async () => {
+        if (this._inProgress) return;
+        this._inProgress = true;
+        try {
+          await this._callback();
+        } finally {
+          this._inProgress = false;
+        }
+      })();
+    }, this._delay);
+  }
+
+  public clear() {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
+    this._inProgress = false;
+  }
+}
 
 /**
  * FormatJS Vite 插件
  */
 export function formatjs(options: UserFormatJSConfig = {}) {
   const config = resolveConfig(options);
-  let _resolvedConfig: ResolvedConfig;
-
-  // Extract 防抖状态
-  let extractDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let extractionInProgress = false;
-  const pendingExtractFiles = new Set<string>();
+  validateConfig(config);
+  let resolvedConfig: ResolvedConfig;
 
   /**
    * 防抖执行提取
    */
-  async function debouncedExtract() {
-    // 如果正在提取，直接返回
-    if (extractionInProgress) {
-      return;
-    }
-
-    extractionInProgress = true;
-
-    try {
-      const duration = await extractMessages(config.extract);
-
-      logger.debug('防抖提取消息完成', {
-        pendingFiles: Array.from(pendingExtractFiles),
-        duration,
-      });
-    } catch (error) {
-      logger.error('防抖提取消息失败', { error });
-    } finally {
-      extractionInProgress = false;
-      pendingExtractFiles.clear();
-    }
+  async function extract() {
+    const timer = new Timer('Processing messages');
+    logger.progress('Processing messages...');
+    await extractMessages(config.extract);
+    await compileMessageFile(config.extract.outFile!, config.compile);
+    timer.end();
+    logger.success(`Processed messages in ${timer.duration}ms`);
   }
-
-  /**
-   * 编译消息文件（直接编译，无需防抖）
-   */
-  async function compileMessageFileDirectly(file: string): Promise<number> {
-    try {
-      const duration = await compileMessageFile(file, config.compile);
-
-      logger.debug('消息文件编译完成', {
-        file,
-        duration,
-      });
-      logger.success(`消息文件编译完成，耗时 ${duration}ms`);
-      return duration;
-    } catch (error) {
-      logger.error('编译消息文件失败', { file, error });
-      return 0;
-    }
-  }
+  const extractDebounce = new DebounceFactory(extract, config.debounceTime);
 
   return {
     name: PLUGIN_NAME,
 
-    configResolved(resolvedConfig) {
-      _resolvedConfig = resolvedConfig;
-
-      // 验证配置
-      try {
-        validateConfig(config);
-        if (config.debug) logger.updateConfig({ level: LogLevel.DEBUG });
-      } catch (error) {
-        logger.error('插件配置验证失败', { error });
-        throw error;
-      }
+    configResolved(_resolvedConfig) {
+      resolvedConfig = _resolvedConfig;
+      setDebug(config.debug);
     },
 
     async buildStart() {
-      logger.debug('构建开始', config);
-
       // 构建开始时提取消息（如果启用）
-      if (config.build.extractOnBuild || _resolvedConfig.command === 'serve') {
+      if (config.extractOnBuild || resolvedConfig.command === 'serve') {
+        const timer = new Timer('Processing messages on build');
+        logger.progress('Processing messages on build...');
         try {
-          const duration = await extractMessages(config.extract);
-          logger.success(`构建开始时提取消息完成，耗时 ${duration}ms`);
+          await extractMessages(config.extract);
+          await compileMessages(config.compile);
+          timer.end();
+          logger.success(`Processed messages in ${timer.duration}ms`);
         } catch (error) {
-          logger.error('构建开始时提取消息失败', { error });
-        }
-      }
-
-      // 构建开始时编译消息（如果启用）
-      if (config.build.compileOnBuild || _resolvedConfig.command === 'serve') {
-        try {
-          const duration = await compileMessages(config.compile);
-          logger.success(`构建开始时编译消息完成，耗时 ${duration}ms`);
-        } catch (error) {
-          logger.error('构建开始时编译消息失败', { error });
+          logger.error('Processing messages failed', { error });
         }
       }
     },
@@ -112,57 +99,37 @@ export function formatjs(options: UserFormatJSConfig = {}) {
       const { file } = ctx;
 
       // 检查是否是消息文件（需要编译的翻译文件）
-      if (isMessageFile(file, config)) {
-        logger.debug('检测到消息文件变化', { file });
+      if (isMessageFile(file, config.compile.inputDir)) {
+        const fn = path.basename(file);
+        const extractOutFileName = path.basename(config.extract.outFile!);
+        if (fn === extractOutFileName) {
+          logger.debug('Skip compiling message file', { file });
+          return;
+        }
 
-        // 直接编译，无需防抖
-        await compileMessageFileDirectly(file);
-
-        // 使用 vite 默认 HMR 行为
+        logger.debug('Compiling message file', file);
+        const timer = new Timer('Compiling message file');
+        logger.progress('Compiling message file...');
+        await compileMessageFile(file, config.compile);
+        timer.end();
+        logger.success(`Compiled message file in ${timer.duration}ms`);
         return;
       }
 
       // 检查文件是否匹配 include 模式（用于 extract）
       if (
-        isFileInInclude(
-          file,
-          config.extract.include,
-          config.extract.ignore ?? []
-        )
+        isFileInInclude(file, config.extract.include, config.extract.ignore!)
       ) {
-        logger.debug('检测到源代码文件变化', { file });
-
-        // 将文件添加到待提取队列
-        pendingExtractFiles.add(file);
-
-        // 清除之前的提取防抖计时器
-        if (extractDebounceTimer) {
-          clearTimeout(extractDebounceTimer);
-        }
-
-        // 设置新的提取防抖计时器
-        extractDebounceTimer = setTimeout(() => {
-          void debouncedExtract();
-        }, config.dev.debounceTime);
-
-        // 使用 vite 默认 HMR 行为
+        logger.debug('Extracting messages', file);
+        extractDebounce.start();
         return;
       }
 
-      // 其他文件使用默认行为
       return;
     },
 
     buildEnd() {
-      // 构建结束时清理提取防抖计时器
-      if (extractDebounceTimer) {
-        clearTimeout(extractDebounceTimer);
-        extractDebounceTimer = null;
-      }
-
-      pendingExtractFiles.clear();
-      extractionInProgress = false;
-      logger.debug('构建结束，已清理所有资源');
+      extractDebounce.clear();
     },
   } satisfies Plugin;
 }

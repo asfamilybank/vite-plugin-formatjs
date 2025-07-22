@@ -19,28 +19,18 @@ export function isFileInInclude(
   include: string[],
   ignore: string[]
 ): boolean {
-  const normalizedPath = path.normalize(filePath).replace(/\\/g, '/');
+  const relativePath = path.relative(process.cwd(), filePath);
+  logger.debug('Check if file is in extract include: ', relativePath);
   return (
-    include.some(pattern => minimatch(normalizedPath, pattern)) &&
-    !ignore.some(pattern => minimatch(normalizedPath, pattern))
+    include.some(pattern => minimatch(relativePath, pattern)) &&
+    !ignore.some(pattern => minimatch(relativePath, pattern))
   );
 }
 
 /**
  * 提取消息
  */
-export async function extractMessages(
-  options: ExtractOptions
-): Promise<number> {
-  const startTime = Date.now();
-
-  // 检查必需参数
-  if (!options.include || !options.outFile) {
-    throw new Error('extract.include 和 extract.outFile 是必需的配置项');
-  }
-
-  logger.debug('开始提取消息', options);
-
+export async function extractMessages(options: ExtractOptions): Promise<void> {
   const files: string[] = [];
   if (options.include.length) {
     files.push(
@@ -50,9 +40,6 @@ export async function extractMessages(
     );
   }
 
-  // 调用 @formatjs/cli-lib 的 extract 函数
-  const formatJSOptions = getExtractConfig(options);
-  await extractAndWrite(files, formatJSOptions);
-
-  return Date.now() - startTime;
+  const extractConfig = getExtractConfig(options);
+  await extractAndWrite(files, extractConfig);
 }

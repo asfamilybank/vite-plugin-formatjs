@@ -24,6 +24,7 @@
     "url": "https://github.com/Asfamilybank/vite-plugin-formatjs/issues"
   },
   "homepage": "https://github.com/Asfamilybank/vite-plugin-formatjs#readme",
+  "type": "module",
   "scripts": {
     "plugin": "pnpm --filter vite-plugin-formatjs"
   },

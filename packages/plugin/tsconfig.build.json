@@ -3,6 +3,10 @@
   "include": ["src/**/*"],
   "compilerOptions": {
     "module": "esnext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      ":*": ["src/*"]
+    }
   }
 }

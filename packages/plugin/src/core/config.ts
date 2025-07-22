@@ -1,9 +1,7 @@
 import type { CompileOpts, ExtractCLIOptions } from '@formatjs/cli-lib';
 
 import type {
-  BuildOptions,
   CompileOptions,
-  DevOptions,
   ExtractOptions,
   UserFormatJSConfig,
   VitePluginFormatJSOptions,
@@ -29,36 +27,23 @@ const DEFAULT_COMPILE_CONFIG: CompileOptions = {
 };
 
 /**
- * 默认开发配置
- */
-const DEFAULT_DEV_CONFIG: DevOptions = {
-  hotReload: true,
-  autoExtract: true,
-  debounceTime: 300,
-};
-
-/**
- * 默认构建配置
- */
-const DEFAULT_BUILD_CONFIG: BuildOptions = {
-  extractOnBuild: true,
-  compileOnBuild: true,
-};
-
-/**
  * 默认调试配置
  */
 const DEFAULT_DEBUG = false;
+const DEFAULT_AUTO_EXTRACT = true;
+const DEFAULT_DEBOUNCE_TIME = 300;
+const DEFAULT_EXTRACT_ON_BUILD = false;
 
 /**
  * 完整默认配置
  */
-const DEFAULT_CONFIG: VitePluginFormatJSOptions = {
+export const DEFAULT_CONFIG: VitePluginFormatJSOptions = {
   extract: DEFAULT_EXTRACT_CONFIG,
   compile: DEFAULT_COMPILE_CONFIG,
-  dev: DEFAULT_DEV_CONFIG,
-  build: DEFAULT_BUILD_CONFIG,
   debug: DEFAULT_DEBUG,
+  autoExtract: DEFAULT_AUTO_EXTRACT,
+  debounceTime: DEFAULT_DEBOUNCE_TIME,
+  extractOnBuild: DEFAULT_EXTRACT_ON_BUILD,
 };
 
 /**
@@ -78,15 +63,10 @@ export function resolveConfig(
       ...DEFAULT_COMPILE_CONFIG,
       ...userConfig.compile,
     },
-    dev: {
-      ...DEFAULT_DEV_CONFIG,
-      ...userConfig.dev,
-    },
-    build: {
-      ...DEFAULT_BUILD_CONFIG,
-      ...userConfig.build,
-    },
     debug: userConfig.debug ?? DEFAULT_DEBUG,
+    autoExtract: userConfig.autoExtract ?? DEFAULT_AUTO_EXTRACT,
+    debounceTime: userConfig.debounceTime ?? DEFAULT_DEBOUNCE_TIME,
+    extractOnBuild: userConfig.extractOnBuild ?? DEFAULT_EXTRACT_ON_BUILD,
   };
 }
 
@@ -142,16 +122,7 @@ export function validateConfig(config: VitePluginFormatJSOptions): void {
   }
 
   // 验证 dev 配置
-  if (config.dev.debounceTime < 0) {
+  if (config.debounceTime < 0) {
     throw new Error('dev.debounceTime 必须大于等于 0');
   }
 }
-
-// 导出默认配置常量
-export {
-  DEFAULT_BUILD_CONFIG,
-  DEFAULT_COMPILE_CONFIG,
-  DEFAULT_CONFIG,
-  DEFAULT_DEV_CONFIG,
-  DEFAULT_EXTRACT_CONFIG,
-};

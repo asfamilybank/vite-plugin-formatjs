@@ -13,11 +13,12 @@ export default defineConfig({
             {
               idInterpolationPattern: "[sha512:contenthash:base64:6]",
               ast: true,
+              removeDefaultMessage: true,
             },
           ],
         ],
       },
     }),
-    formatjs({}), // 使用默认配置
+    formatjs(), // 使用默认配置
   ],
 });
