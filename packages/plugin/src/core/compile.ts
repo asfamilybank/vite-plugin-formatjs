@@ -63,9 +63,9 @@ export async function compileMessageFile(
   options: CompileOptions
 ): Promise<void> {
   const fileName = path.basename(messageFile);
-  logger.debug(`Compile message file: ${fileName}`);
+  logger.debug('Compile message file:', fileName);
   const outFile = path.join(options.outputDir, fileName);
-  logger.debug(`Compile output file: ${outFile}`);
+  logger.debug('Compile output file:', outFile);
 
   const absoluteMessageFile = path.join(process.cwd(), messageFile);
   const absoluteOutFile = path.join(process.cwd(), outFile);
@@ -94,7 +94,7 @@ export async function compileMessages(options: CompileOptions): Promise<void> {
     files.map((file, i) => {
       const fileName = path.basename(file);
       const outFile = path.join(options.outputDir, fileName);
-      logger.debug(`Write compiled message file: ${outFile}`);
+      logger.debug('Write compiled message file:', outFile);
       return fs.writeFile(outFile, results[i]!, 'utf8');
     })
   );

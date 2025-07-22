@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { Plugin } from 'vite';
 
 import {
   compileMessageFile,
@@ -10,8 +10,9 @@ import {
   validateConfig,
   extractMessages,
   isFileInInclude,
+  type PartialConfig,
+  type VitePluginFormatJSOptions,
 } from ':core';
-import type { UserFormatJSConfig } from ':core';
 import { PLUGIN_NAME, Timer, logger, setDebug } from ':utils';
 
 class DebounceFactory {
@@ -53,35 +54,33 @@ class DebounceFactory {
 /**
  * FormatJS Vite 插件
  */
-export function formatjs(options: UserFormatJSConfig = {}) {
+export function formatjs(
+  options: PartialConfig<VitePluginFormatJSOptions> = {}
+) {
   const config = resolveConfig(options);
   validateConfig(config);
-  let resolvedConfig: ResolvedConfig;
-
-  /**
-   * 防抖执行提取
-   */
-  async function extract() {
-    const timer = new Timer('Processing messages');
-    logger.progress('Processing messages...');
-    await extractMessages(config.extract);
-    await compileMessageFile(config.extract.outFile!, config.compile);
-    timer.end();
-    logger.success(`Processed messages in ${timer.duration}ms`);
-  }
-  const extractDebounce = new DebounceFactory(extract, config.debounceTime);
+  let extractDebounce: DebounceFactory;
 
   return {
     name: PLUGIN_NAME,
 
-    configResolved(_resolvedConfig) {
-      resolvedConfig = _resolvedConfig;
+    configResolved() {
       setDebug(config.debug);
+
+      async function extract() {
+        const timer = new Timer('Processing messages');
+        logger.progress('Processing messages...');
+        await extractMessages(config.extract);
+        await compileMessageFile(config.extract.outFile!, config.compile);
+        timer.end();
+        logger.success(`Processed messages in ${timer.duration}ms`);
+      }
+      extractDebounce = new DebounceFactory(extract, config.debounceTime);
     },
 
     async buildStart() {
       // 构建开始时提取消息（如果启用）
-      if (config.extractOnBuild || resolvedConfig.command === 'serve') {
+      if (config.extractOnBuild) {
         const timer = new Timer('Processing messages on build');
         logger.progress('Processing messages on build...');
         try {
@@ -90,7 +89,7 @@ export function formatjs(options: UserFormatJSConfig = {}) {
           timer.end();
           logger.success(`Processed messages in ${timer.duration}ms`);
         } catch (error) {
-          logger.error('Processing messages failed', { error });
+          logger.error('Processing messages failed:', error);
         }
       }
     },
@@ -103,7 +102,7 @@ export function formatjs(options: UserFormatJSConfig = {}) {
         const fn = path.basename(file);
         const extractOutFileName = path.basename(config.extract.outFile!);
         if (fn === extractOutFileName) {
-          logger.debug('Skip compiling message file', { file });
+          logger.debug('Skip compiling message file:', file);
           return;
         }
 
@@ -118,6 +117,7 @@ export function formatjs(options: UserFormatJSConfig = {}) {
 
       // 检查文件是否匹配 include 模式（用于 extract）
       if (
+        config.autoExtract ||
         isFileInInclude(file, config.extract.include, config.extract.ignore!)
       ) {
         logger.debug('Extracting messages', file);

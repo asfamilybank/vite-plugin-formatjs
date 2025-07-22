@@ -3,7 +3,7 @@ import type { CompileOpts, ExtractCLIOptions } from '@formatjs/cli-lib';
 import type {
   CompileOptions,
   ExtractOptions,
-  UserFormatJSConfig,
+  PartialConfig,
   VitePluginFormatJSOptions,
 } from './types';
 
@@ -46,28 +46,39 @@ export const DEFAULT_CONFIG: VitePluginFormatJSOptions = {
   extractOnBuild: DEFAULT_EXTRACT_ON_BUILD,
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function mergeConfig<T extends Record<string, any>>(
+  defaultConfig: T,
+  userConfig: PartialConfig<T>
+): T {
+  return Object.entries(userConfig).reduce((acc, [key, value]) => {
+    if (typeof value === 'undefined') {
+      return acc;
+    }
+    if (typeof acc[key as keyof T] === 'object' && typeof value === 'object') {
+      acc[key as keyof T] = mergeConfig(
+        acc[key as keyof T],
+        value as Partial<T[keyof T]>
+      );
+    } else {
+      acc[key as keyof T] = value as T[keyof T];
+    }
+    return acc;
+  }, defaultConfig);
+}
+
 /**
  * 解析配置 - 主要导出函数
  * @param userConfig 用户提供的配置
  * @returns 完整的配置对象
  */
 export function resolveConfig(
-  userConfig: UserFormatJSConfig = {}
+  userConfig: PartialConfig<VitePluginFormatJSOptions>
 ): VitePluginFormatJSOptions {
-  return {
-    extract: {
-      ...DEFAULT_EXTRACT_CONFIG,
-      ...userConfig.extract,
-    },
-    compile: {
-      ...DEFAULT_COMPILE_CONFIG,
-      ...userConfig.compile,
-    },
-    debug: userConfig.debug ?? DEFAULT_DEBUG,
-    autoExtract: userConfig.autoExtract ?? DEFAULT_AUTO_EXTRACT,
-    debounceTime: userConfig.debounceTime ?? DEFAULT_DEBOUNCE_TIME,
-    extractOnBuild: userConfig.extractOnBuild ?? DEFAULT_EXTRACT_ON_BUILD,
-  };
+  if (typeof userConfig.extractOnBuild === 'undefined') {
+    userConfig.extractOnBuild = process.env.NODE_ENV === 'development';
+  }
+  return mergeConfig(DEFAULT_CONFIG, userConfig);
 }
 
 /**
@@ -104,25 +115,25 @@ export function getCompileConfig(config: CompileOptions): CompileOpts {
  */
 export function validateConfig(config: VitePluginFormatJSOptions): void {
   // 验证 extract 配置
-  if (!config.extract.include || config.extract.include.length === 0) {
-    throw new Error('extract.include 必须是非空数组');
+  if (!config.extract?.include || config.extract.include.length === 0) {
+    throw new Error('extract.include must be a non-empty array');
   }
 
   if (!config.extract.outFile) {
-    throw new Error('extract.outFile 不能为空');
+    throw new Error('extract.outFile must be a non-empty string');
   }
 
   // 验证 compile 配置
-  if (!config.compile.inputDir) {
-    throw new Error('compile.inputDir 不能为空');
+  if (!config.compile?.inputDir) {
+    throw new Error('compile.inputDir must be a non-empty string');
   }
 
   if (!config.compile.outputDir) {
-    throw new Error('compile.outputDir 不能为空');
+    throw new Error('compile.outputDir must be a non-empty string');
   }
 
   // 验证 dev 配置
-  if (config.debounceTime < 0) {
-    throw new Error('dev.debounceTime 必须大于等于 0');
+  if (config.debounceTime && config.debounceTime < 0) {
+    throw new Error('dev.debounceTime must be greater than or equal to 0');
   }
 }

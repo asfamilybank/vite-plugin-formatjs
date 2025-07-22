@@ -20,7 +20,7 @@ export function isFileInInclude(
   ignore: string[]
 ): boolean {
   const relativePath = path.relative(process.cwd(), filePath);
-  logger.debug('Check if file is in extract include: ', relativePath);
+  logger.debug('Check if file is in extract include:', relativePath);
   return (
     include.some(pattern => minimatch(relativePath, pattern)) &&
     !ignore.some(pattern => minimatch(relativePath, pattern))
