@@ -39,9 +39,9 @@ Add the plugin to your `vite.config.ts`:
 
 ```typescript
 // vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { formatjs } from "vite-plugin-formatjs";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { formatjs } from 'vite-plugin-formatjs';
 
 export default defineConfig({
   plugins: [
@@ -50,11 +50,11 @@ export default defineConfig({
       babel: {
         plugins: [
           [
-            "formatjs",
+            'formatjs',
             {
-              idInterpolationPattern: "[sha512:contenthash:base64:6]",
+              idInterpolationPattern: '[sha512:contenthash:base64:6]',
               ast: true,
-              removeDefaultMessage: process.env.NODE_ENV === "production",
+              removeDefaultMessage: process.env.NODE_ENV === 'production',
             },
           ],
         ],
@@ -64,15 +64,15 @@ export default defineConfig({
     // Configure vite-plugin-formatjs for build-time processing
     formatjs({
       extract: {
-        include: ["src/**/*.{ts,tsx,js,jsx}"],
-        outFile: "src/i18n/lang/en.json",
-        idInterpolationPattern: "[sha512:contenthash:base64:6]",
+        include: ['src/**/*.{ts,tsx,js,jsx}'],
+        outFile: 'src/i18n/lang/en.json',
+        idInterpolationPattern: '[sha512:contenthash:base64:6]',
       },
       compile: {
-        inputDir: "src/i18n/lang",
-        outputDir: "src/i18n/compiled-lang",
+        inputDir: 'src/i18n/lang',
+        outputDir: 'src/i18n/compiled-lang',
       },
-      debug: process.env.NODE_ENV === "development",
+      debug: process.env.NODE_ENV === 'development',
     }),
   ],
 });
@@ -82,13 +82,13 @@ export default defineConfig({
 
 ```typescript
 // src/i18n/index.ts
-export const supportedLocales = ["en", "zh", "fr"] as const;
+export const supportedLocales = ['en', 'zh', 'fr'] as const;
 export type SupportedLocale = (typeof supportedLocales)[number];
 
 export async function loadMessages(locale: string) {
   const normalizedLocale = supportedLocales.includes(locale as SupportedLocale)
     ? locale
-    : "en";
+    : 'en';
 
   try {
     const messages = await import(`./compiled-lang/${normalizedLocale}.json`);
@@ -104,7 +104,7 @@ export async function loadMessages(locale: string) {
 
 ```tsx
 // src/components/Welcome.tsx
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage } from 'react-intl';
 
 export function Welcome() {
   return (
@@ -131,40 +131,40 @@ export function Welcome() {
 ### Complete Configuration Example
 
 ```typescript
-import { formatjs } from "vite-plugin-formatjs";
+import { formatjs } from 'vite-plugin-formatjs';
 
 formatjs({
   // Message extraction configuration
   extract: {
     // Files to scan for messages
     include: [
-      "src/**/*.{ts,tsx,js,jsx}",
-      "components/**/*.vue",
-      "pages/**/*.html",
+      'src/**/*.{ts,tsx,js,jsx}',
+      'components/**/*.vue',
+      'pages/**/*.html',
     ],
 
     // Files to ignore
-    ignore: ["node_modules/**", "**/*.test.*", "**/*.spec.*", "dist/**"],
+    ignore: ['node_modules/**', '**/*.test.*', '**/*.spec.*', 'dist/**'],
 
     // Output file for extracted messages
-    outFile: "src/i18n/lang/en.json",
+    outFile: 'src/i18n/lang/en.json',
 
     // Message ID generation pattern
-    idInterpolationPattern: "[sha512:contenthash:base64:6]",
+    idInterpolationPattern: '[sha512:contenthash:base64:6]',
 
     // FormatJS extraction options
-    additionalComponentNames: ["CustomFormattedMessage"],
+    additionalComponentNames: ['CustomFormattedMessage'],
     preserveWhitespace: true,
   },
 
   // Message compilation configuration
   compile: {
-    inputDir: "src/i18n/lang", // Source translation files
-    outputDir: "src/i18n/compiled-lang", // Compiled output directory
+    inputDir: 'src/i18n/lang', // Source translation files
+    outputDir: 'src/i18n/compiled-lang', // Compiled output directory
   },
 
   // Development options
-  debug: process.env.NODE_ENV === "development",
+  debug: process.env.NODE_ENV === 'development',
   autoExtract: true,
   debounceTime: 300,
   extractOnBuild: true,
@@ -206,14 +206,12 @@ All options from [`@formatjs/cli-lib`](https://formatjs.io/docs/tooling/cli#comp
 The plugin provides seamless hot reload functionality during development:
 
 1. **Source File Changes**: When you modify source files containing messages, the plugin automatically:
-
    - Extracts new/modified messages
    - Updates the message files
    - Recompiles affected translations
    - Triggers Vite's HMR
 
 2. **Translation File Changes**: When you update translation files, the plugin:
-
    - Recompiles the specific file
    - Updates the compiled output
    - Triggers HMR for immediate preview
@@ -241,9 +239,9 @@ The plugin provides seamless hot reload functionality during development:
 
 ```typescript
 // Complete setup with React
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { formatjs } from "vite-plugin-formatjs";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { formatjs } from 'vite-plugin-formatjs';
 
 export default defineConfig({
   plugins: [
@@ -251,11 +249,11 @@ export default defineConfig({
       babel: {
         plugins: [
           [
-            "formatjs",
+            'formatjs',
             {
-              idInterpolationPattern: "[sha512:contenthash:base64:6]",
+              idInterpolationPattern: '[sha512:contenthash:base64:6]',
               ast: true,
-              removeDefaultMessage: process.env.NODE_ENV === "production",
+              removeDefaultMessage: process.env.NODE_ENV === 'production',
             },
           ],
         ],
@@ -263,13 +261,13 @@ export default defineConfig({
     }),
     formatjs({
       extract: {
-        include: ["src/**/*.{ts,tsx}"],
-        outFile: "src/locales/en.json",
-        idInterpolationPattern: "[sha512:contenthash:base64:6]",
+        include: ['src/**/*.{ts,tsx}'],
+        outFile: 'src/locales/en.json',
+        idInterpolationPattern: '[sha512:contenthash:base64:6]',
       },
       compile: {
-        inputDir: "src/locales",
-        outputDir: "src/compiled-locales",
+        inputDir: 'src/locales',
+        outputDir: 'src/compiled-locales',
       },
     }),
   ],
@@ -279,19 +277,19 @@ export default defineConfig({
 ### Vue + Vue-i18n
 
 ```typescript
-import { formatjs } from "vite-plugin-formatjs";
+import { formatjs } from 'vite-plugin-formatjs';
 
 export default defineConfig({
   plugins: [
     vue(),
     formatjs({
       extract: {
-        include: ["src/**/*.{vue,ts,js}"],
-        outFile: "src/locales/messages.json",
+        include: ['src/**/*.{vue,ts,js}'],
+        outFile: 'src/locales/messages.json',
       },
       compile: {
-        inputDir: "src/locales",
-        outputDir: "src/compiled-locales",
+        inputDir: 'src/locales',
+        outputDir: 'src/compiled-locales',
       },
     }),
   ],
@@ -305,25 +303,6 @@ export default defineConfig({
 - **Parallel Compilation**: Compiles multiple translation files concurrently
 - **Smart Caching**: Avoids reprocessing unchanged content
 - **Memory Efficient**: Optimized for large codebases
-
-## 🐛 Debugging
-
-Enable debug mode to get detailed information about the plugin's operation:
-
-```typescript
-formatjs({
-  debug: true, // or process.env.NODE_ENV === 'development'
-  // ... other options
-});
-```
-
-Debug output includes:
-
-- File processing information
-- Performance timing
-- Message extraction results
-- Compilation status
-- Error details
 
 ## 📁 Project Structure
 
@@ -344,6 +323,73 @@ src/
 └── ...
 ```
 
+## 🔧 API Reference
+
+### `formatjs(options?: UserFormatJSConfig)`
+
+Creates the Vite plugin with the specified configuration.
+
+#### Parameters
+
+- `options` (optional): Configuration object of type `UserFormatJSConfig`
+
+#### Returns
+
+A Vite plugin object.
+
+### Configuration Types
+
+#### `UserFormatJSConfig`
+
+```typescript
+type UserFormatJSConfig = Partial<
+  VitePluginFormatJSOptions & Partial<ExtractOptions> & Partial<CompileOptions>
+>;
+```
+
+The main configuration type that users provide when using the plugin. All fields are optional, and the plugin will use sensible defaults for missing options.
+
+#### `VitePluginFormatJSOptions`
+
+```typescript
+interface VitePluginFormatJSOptions {
+  extract: ExtractOptions; // Message extraction configuration
+  compile: CompileOptions; // Message compilation configuration
+  debug: boolean; // Enable debug logging (default: false)
+  autoExtract: boolean; // Auto-extract on file changes (default: true)
+  debounceTime: number; // Debounce time in ms (default: 300)
+  extractOnBuild: boolean; // Extract on build start (default: false)
+}
+```
+
+#### `ExtractOptions`
+
+Extends `ExtractCLIOptions` from `@formatjs/cli-lib` with additional file matching configuration.
+
+```typescript
+interface ExtractOptions extends ExtractCLIOptions {
+  include: string[]; // File patterns to scan (required)
+}
+```
+
+**Key Properties:**
+
+- `include`: Array of file matching patterns using minimatch syntax
+- `outFile`: Output file for extracted messages
+- `idInterpolationPattern`: Pattern for generating message IDs
+- All other options from [`@formatjs/cli-lib`](https://formatjs.io/docs/tooling/cli#extraction)
+
+#### `CompileOptions`
+
+Extends `CompileOpts` from `@formatjs/cli-lib` with directory configuration.
+
+```typescript
+interface CompileOptions extends CompileOpts {
+  inputDir: string; // Input directory for translation files
+  outputDir: string; // Output directory for compiled files
+}
+```
+
 ## 🤝 Integration with Babel Plugin
 
 This plugin works seamlessly with `babel-plugin-formatjs`:
@@ -353,9 +399,61 @@ This plugin works seamlessly with `babel-plugin-formatjs`:
 
 Both plugins can use the same `idInterpolationPattern` to ensure consistency.
 
+## 🐛 Debugging
+
+Enable debug mode to get detailed information about the plugin's operation:
+
+```typescript
+formatjs({
+  debug: true, // or process.env.NODE_ENV === 'development'
+  // ... other options
+});
+```
+
+Debug output includes:
+
+- File processing information and timing
+- Message extraction results and statistics
+- Compilation status and performance metrics
+- Error details and stack traces
+
+## 🔧 Advanced Configuration
+
+### Custom Message ID Generation
+
+```typescript
+formatjs({
+  extract: {
+    // Generate short, stable IDs based on content
+    idInterpolationPattern: '[sha512:contenthash:base64:6]',
+
+    // Or use custom patterns
+    idInterpolationPattern: '[contenthash:5]',
+  },
+});
+```
+
+### Environment-Based Configuration
+
+```typescript
+const isProduction = process.env.NODE_ENV === 'production';
+
+formatjs({
+  debug: !isProduction,
+  extractOnBuild: isProduction,
+  debounceTime: isProduction ? 100 : 300,
+  extract: {
+    // Production builds might want more aggressive extraction
+    include: isProduction
+      ? ['src/**/*.{ts,tsx,js,jsx,vue}']
+      : ['src/**/*.{ts,tsx,js,jsx}'],
+  },
+});
+```
+
 ## 📝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/Asfamilybank/vite-plugin-formatjs/blob/main/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
