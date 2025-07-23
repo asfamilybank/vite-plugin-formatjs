@@ -14,12 +14,14 @@ const { compile, compileAndWrite } = pkg;
  * 发现消息目录下的所有消息文件
  */
 export async function findMessageFiles(messageDir: string): Promise<string[]> {
+  const inputDir = path.resolve(process.cwd(), messageDir);
   const messageFiles: string[] = [];
-  const files = await fs.readdir(messageDir);
+  const files = await fs.readdir(inputDir);
 
   for (const file of files) {
     if (file.endsWith('.json')) {
-      const filePath = path.join(messageDir, file);
+      const filePath = path.resolve(inputDir, file);
+      logger.debug('Find message file: ', filePath);
 
       // 检查是否是有效的 JSON 文件
       try {
@@ -39,20 +41,26 @@ export async function findMessageFiles(messageDir: string): Promise<string[]> {
 /**
  * 检查文件是否是消息文件
  */
-export function isMessageFile(filePath: string, inputDir: string): boolean {
-  const relativeFilePath = path.relative(process.cwd(), filePath);
+export function isMessageFile(
+  filePath: string,
+  inputDir: string,
+  excludeFile: string
+): boolean {
+  const relativeFilePath = path.resolve(process.cwd(), filePath);
   logger.debug('Check if it is a message file: ', relativeFilePath);
-  const normalizedMessageDir = path.normalize(inputDir);
+  const normalizedMessageDir = path.resolve(process.cwd(), inputDir);
+  logger.debug('Message files dir: ', normalizedMessageDir);
 
   // 检查文件是否在消息目录中
-  if (!relativeFilePath.startsWith(normalizedMessageDir)) {
+  if (path.dirname(relativeFilePath) !== normalizedMessageDir) {
     return false;
   }
 
   // 检查是否是 JSON 文件且不是主消息文件
   const fileName = path.basename(filePath);
+  const excludeFileName = path.basename(excludeFile);
 
-  return fileName.endsWith('.json');
+  return fileName.endsWith('.json') && fileName !== excludeFileName;
 }
 
 /**
@@ -63,12 +71,12 @@ export async function compileMessageFile(
   options: CompileOptions
 ): Promise<void> {
   const fileName = path.basename(messageFile);
-  logger.debug('Compile message file:', fileName);
   const outFile = path.join(options.outputDir, fileName);
-  logger.debug('Compile output file:', outFile);
 
-  const absoluteMessageFile = path.join(process.cwd(), messageFile);
-  const absoluteOutFile = path.join(process.cwd(), outFile);
+  const absoluteMessageFile = path.resolve(process.cwd(), messageFile);
+  logger.debug('Compile message file: ', absoluteMessageFile);
+  const absoluteOutFile = path.resolve(process.cwd(), outFile);
+  logger.debug('Compile output file: ', absoluteOutFile);
 
   // 编译文件内容
   const compileConfig = getCompileConfig(options);
@@ -93,8 +101,8 @@ export async function compileMessages(options: CompileOptions): Promise<void> {
   await Promise.all(
     files.map((file, i) => {
       const fileName = path.basename(file);
-      const outFile = path.join(options.outputDir, fileName);
-      logger.debug('Write compiled message file:', outFile);
+      const outFile = path.resolve(options.outputDir, fileName);
+      logger.debug('Write compiled message file: ', outFile);
       return fs.writeFile(outFile, results[i]!, 'utf8');
     })
   );

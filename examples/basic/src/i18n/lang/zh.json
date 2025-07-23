@@ -1,0 +1,44 @@
+{
+  "0L+4nr": {
+    "defaultMessage": "Interactive Counter"
+  },
+  "0p8YxN": {
+    "defaultMessage": "Current count: {count}"
+  },
+  "20g7q/": {
+    "defaultMessage": "Vite Plugin FormatJS Example"
+  },
+  "5U0k4c": {
+    "defaultMessage": "Date and Time Formatting"
+  },
+  "8mkx8h": {
+    "defaultMessage": "This is a basic example demonstrating vite-plugin-formatjs with React and react-intl."
+  },
+  "H/XqXJ": {
+    "defaultMessage": "Increase"
+  },
+  "WauSRj": {
+    "defaultMessage": "Choose language:"
+  },
+  "Z2Hzm9": {
+    "defaultMessage": "Note: This is a demo. In a real app, you would implement proper language switching logic."
+  },
+  "aZhrzS": {
+    "defaultMessage": "Current time: {time}"
+  },
+  "dtKx3y": {
+    "defaultMessage": "Built with Vite, React, and vite-plugin-formatjs"
+  },
+  "jLs6b9": {
+    "defaultMessage": "Decrease"
+  },
+  "jm/spn": {
+    "defaultMessage": "Reset"
+  },
+  "n+pxpF": {
+    "defaultMessage": "Today is {date}"
+  },
+  "y1a4OP": {
+    "defaultMessage": "Language Switcher"
+  }
+}

@@ -30,9 +30,7 @@ export async function loadMessages(
   try {
     // 动态导入编译后的翻译文件
     // 插件默认配置会将编译结果输出到 src/i18n/compiled-lang/ 目录
-    const messages = await import(
-      `../i18n/compiled-lang/${normalizedLocale}.json`
-    );
+    const messages = await import(`./compiled-lang/${normalizedLocale}.json`);
     return messages.default || messages;
   } catch (error) {
     console.warn(
@@ -40,10 +38,10 @@ export async function loadMessages(
       error
     );
 
-    // 如果加载失败且不是英文，尝试加载英文
+    // 如果加载失败且不是英文，尝试加载英文å
     if (normalizedLocale !== "en") {
       try {
-        const fallbackMessages = await import("../i18n/compiled-lang/en.json");
+        const fallbackMessages = await import("./compiled-lang/en.json");
         return fallbackMessages.default || fallbackMessages;
       } catch (fallbackError) {
         console.error(

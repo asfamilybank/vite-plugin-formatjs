@@ -21,7 +21,9 @@ export function isFileInInclude(
   ignore: string[]
 ): boolean {
   const relativePath = path.relative(process.cwd(), filePath);
-  logger.debug('Check if file is in extract include:', relativePath);
+  logger.debug('Check if file is in extract include: ', relativePath);
+  logger.debug('File must match include: ', include);
+  logger.debug('File must not match ignore: ', ignore);
   return (
     include.some(pattern => minimatch(relativePath, pattern)) &&
     !ignore.some(pattern => minimatch(relativePath, pattern))
@@ -49,7 +51,7 @@ export async function extractMessage(
   files: string[],
   options: ExtractOptions
 ): Promise<void> {
-  logger.debug('Extracting messages:', files);
+  logger.debug('Extracting messages: ', files);
   const extractConfig = getExtractConfig(options);
   const result = await extract(files, extractConfig);
 
@@ -65,7 +67,7 @@ export async function extractMessage(
     ...messages,
   };
 
-  logger.debug('Merged messages:', mergedMessages);
+  logger.debug('Merged messages: ', mergedMessages);
 
   await fs.writeFile(options.outFile!, JSON.stringify(mergedMessages, null, 2));
 }

@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import type { Plugin } from 'vite';
 
 import {
@@ -56,9 +54,28 @@ export function formatjs(
     }
   }
 
+  async function compile(file: string) {
+    logger.debug('Compiling message file: ', file);
+    const timer = new Timer('Compiling message file');
+    logger.progress('Compiling message file...');
+    await compileMessageFile(file, config.compile);
+    timer.end();
+    logger.success(`Compiled message file in ${timer.duration}ms`);
+  }
+
   return {
     name: PLUGIN_NAME,
 
+    configureServer(server) {
+      server.watcher.on('add', file => {
+        logger.debug('Add message file: ', file);
+        if (
+          isMessageFile(file, config.compile.inputDir, config.extract.outFile!)
+        ) {
+          void compile(file);
+        }
+      });
+    },
     configResolved() {
       setDebug(config.debug);
     },
@@ -81,31 +98,22 @@ export function formatjs(
 
     async handleHotUpdate(ctx) {
       const { file } = ctx;
+      logger.debug('Handling hot update: ', file);
 
       // 检查是否是消息文件（需要编译的翻译文件）
-      if (isMessageFile(file, config.compile.inputDir)) {
-        const fn = path.basename(file);
-        const extractOutFileName = path.basename(config.extract.outFile!);
-        if (fn === extractOutFileName) {
-          logger.debug('Skip compiling message file:', file);
-          return;
-        }
-
-        logger.debug('Compiling message file', file);
-        const timer = new Timer('Compiling message file');
-        logger.progress('Compiling message file...');
-        await compileMessageFile(file, config.compile);
-        timer.end();
-        logger.success(`Compiled message file in ${timer.duration}ms`);
+      if (
+        isMessageFile(file, config.compile.inputDir, config.extract.outFile!)
+      ) {
+        await compile(file);
         return;
       }
 
       // 检查文件是否匹配 include 模式（用于 extract）
       if (
-        config.autoExtract ||
+        config.autoExtract &&
         isFileInInclude(file, config.extract.include, config.extract.ignore!)
       ) {
-        logger.debug('Extracting messages', file);
+        logger.debug('Extracting message: ', file);
 
         clear();
         pendingExtract.add(file);
