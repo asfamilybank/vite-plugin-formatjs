@@ -26,7 +26,15 @@
   "homepage": "https://github.com/Asfamilybank/vite-plugin-formatjs#readme",
   "type": "module",
   "scripts": {
-    "plugin": "pnpm --filter vite-plugin-formatjs"
+    "plugin": "pnpm --filter vite-plugin-formatjs",
+    "build": "pnpm plugin build",
+    "test": "pnpm plugin test",
+    "lint": "pnpm plugin lint",
+    "typecheck": "pnpm plugin typecheck",
+    "format": "pnpm plugin format",
+    "release": "pnpm plugin release",
+    "release:dry-run": "pnpm plugin release:dry-run",
+    "prepare-release": "./scripts/prepare-release.sh"
   },
   "packageManager": "pnpm@10.12.4",
   "devDependencies": {
