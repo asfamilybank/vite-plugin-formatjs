@@ -55,7 +55,7 @@ function mergeConfig<T extends Record<string, any>>(
     if (typeof value === 'undefined') {
       return acc;
     }
-    if (typeof acc[key as keyof T] === 'object' && typeof value === 'object') {
+    if (typeof acc[key as keyof T] === 'object' && typeof value === 'object' && !Array.isArray(value)) {
       acc[key as keyof T] = mergeConfig(
         acc[key as keyof T],
         value as Partial<T[keyof T]>

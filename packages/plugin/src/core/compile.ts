@@ -16,24 +16,25 @@ const { compile, compileAndWrite } = pkg;
 export async function findMessageFiles(messageDir: string): Promise<string[]> {
   const inputDir = path.resolve(process.cwd(), messageDir);
   const messageFiles: string[] = [];
-  const files = await fs.readdir(inputDir);
+  
+    const files = await fs.readdir(inputDir);
 
-  for (const file of files) {
-    if (file.endsWith('.json')) {
-      const filePath = path.resolve(inputDir, file);
-      logger.debug('Find message file: ', filePath);
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const filePath = path.join(inputDir, file);
+        logger.debug('Find message file: ', filePath);
 
-      // 检查是否是有效的 JSON 文件
-      try {
-        const content = await fs.readFile(filePath, 'utf8');
-        JSON.parse(content);
-        messageFiles.push(filePath);
-      } catch {
-        // 忽略无效的 JSON 文件
-        logger.debug('Skip invalid JSON file: ', filePath);
+        // 检查是否是有效的 JSON 文件
+        try {
+          const content = await fs.readFile(filePath, 'utf8');
+          JSON.parse(content);
+          messageFiles.push(filePath);
+        } catch {
+          // 忽略无效的 JSON 文件
+          logger.debug('Skip invalid JSON file: ', filePath);
+        }
       }
     }
-  }
 
   return messageFiles;
 }
@@ -46,13 +47,14 @@ export function isMessageFile(
   inputDir: string,
   excludeFile: string
 ): boolean {
-  const relativeFilePath = path.resolve(process.cwd(), filePath);
-  logger.debug('Check if it is a message file: ', relativeFilePath);
+  const absoluteFilePath = path.resolve(process.cwd(), filePath);
+  logger.debug('Check if it is a message file: ', absoluteFilePath);
   const normalizedMessageDir = path.resolve(process.cwd(), inputDir);
   logger.debug('Message files dir: ', normalizedMessageDir);
 
   // 检查文件是否在消息目录中
-  if (path.dirname(relativeFilePath) !== normalizedMessageDir) {
+  const fileDir = path.dirname(absoluteFilePath);
+  if (fileDir !== normalizedMessageDir) {
     return false;
   }
 
@@ -101,7 +103,7 @@ export async function compileMessages(options: CompileOptions): Promise<void> {
   await Promise.all(
     files.map((file, i) => {
       const fileName = path.basename(file);
-      const outFile = path.resolve(options.outputDir, fileName);
+      const outFile = path.resolve(process.cwd(), options.outputDir, fileName);
       logger.debug('Write compiled message file: ', outFile);
       return fs.writeFile(outFile, results[i]!, 'utf8');
     })
