@@ -28,7 +28,7 @@ check_step() {
 }
 
 # 1. 检查 Git 状态
-check_step "Git 状态" "git status --porcelain | wc -l | grep -q '^0$' || (echo '有未提交的更改' && exit 1)"
+check_step "Git 状态" "test \$(git status --porcelain | wc -l) -eq 0 || (echo '有未提交的更改' && exit 1)"
 
 # 2. 安装依赖
 echo -e "${YELLOW}📦 安装依赖...${NC}"
