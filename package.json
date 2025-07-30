@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-formatjs-repo",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "A Vite plugin that integrates FormatJS for message extraction, compilation, and build-time code transformation with hot reload support",
   "keywords": [
     "vite",
