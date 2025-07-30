@@ -55,11 +55,6 @@ jobs:
           test -f packages/plugin/dist/index.cjs
           echo "Build verification completed"
       
-      - name: Publish to npm
-        run: pnpm plugin release
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -79,14 +74,12 @@ jobs:
             - Rich logging and debug information
             - Full TypeScript support with detailed type definitions
             
-            ## Installation
+            ## Development Status
             
-            ```bash
-            npm install -D vite-plugin-formatjs
-            ```
+            This is a development release. LTS version will be published to npm once all tests pass and documentation is complete.
             
             ## Documentation
             
             See the [README](https://github.com/Asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
           draft: false
-          prerelease: false 
+          prerelease: true 

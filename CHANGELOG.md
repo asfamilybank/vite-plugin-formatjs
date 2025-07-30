@@ -27,14 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📊 Rich Logging
 - 🔧 TypeScript Support
 
-## [0.1.0] - 2024-01-XX
+## [0.0.0] - 2024-01-XX
 
 ### Added
-- Initial release
+- Initial development release
 - Core extraction functionality
 - Compilation support
 - Vite plugin integration
 - TypeScript definitions
 - Comprehensive documentation
 - Example project
-- Test suite 
+- Test suite
+- GitHub Actions CI/CD pipeline
+- Automated release workflow 

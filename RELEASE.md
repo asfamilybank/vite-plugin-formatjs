@@ -2,7 +2,17 @@
 
 ## 发布流程概述
 
-本项目使用自动化发布流程，通过 GitHub Actions 在推送标签时自动发布到 npm。
+本项目使用分阶段发布流程：
+
+### 开发阶段 (0.0.x)
+- 通过 GitHub Actions 在推送标签时自动创建 GitHub Release
+- 标记为 pre-release，用于开发和测试
+- 不发布到 npm
+
+### LTS 阶段 (1.0.0+)
+- 通过手动触发 GitHub Actions 工作流
+- 发布到 npm 并创建正式 GitHub Release
+- 提供长期支持
 
 ## 发布前准备
 
