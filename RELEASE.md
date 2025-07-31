@@ -9,10 +9,10 @@
 - 标记为 pre-release，用于开发和测试
 - 不发布到 npm
 
-### LTS 阶段 (1.0.0+)
-- 通过手动触发 GitHub Actions 工作流
-- 发布到 npm 并创建正式 GitHub Release
-- 提供长期支持
+### 正式发布阶段 (0.0.1+)
+- 通过推送标签自动触发发布
+- 自动发布到 npm 并创建 GitHub Release
+- 提供完整的发布流程
 
 ## 发布前准备
 
@@ -128,6 +128,16 @@ node -e "console.log(require('vite-plugin-formatjs'))"
 ```bash
 cd packages/plugin
 npm publish --access public
+```
+
+### 发布流程总结
+
+```bash
+# 完整发布流程
+cd packages/plugin
+npm version patch  # 或 minor/major
+git push origin --tags
+# 自动发布完成
 ```
 
 ## 配置要求
