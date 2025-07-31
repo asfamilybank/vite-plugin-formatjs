@@ -87,6 +87,6 @@ jobs:
             
             ## Documentation
             
-            See the [README](https://github.com/Asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
+            See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
           draft: false
           prerelease: false 

@@ -14,16 +14,16 @@
     "intl",
     "typescript"
   ],
-  "author": "Asfamilybank",
+  "author": "asfamilybank",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Asfamilybank/vite-plugin-formatjs.git"
+    "url": "git+https://github.com/asfamilybank/vite-plugin-formatjs.git"
   },
   "bugs": {
-    "url": "https://github.com/Asfamilybank/vite-plugin-formatjs/issues"
+    "url": "https://github.com/asfamilybank/vite-plugin-formatjs/issues"
   },
-  "homepage": "https://github.com/Asfamilybank/vite-plugin-formatjs#readme",
+  "homepage": "https://github.com/asfamilybank/vite-plugin-formatjs#readme",
   "type": "module",
   "scripts": {
     "plugin": "pnpm --filter vite-plugin-formatjs",

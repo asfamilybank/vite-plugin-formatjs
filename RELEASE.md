@@ -108,7 +108,7 @@ node -e "console.log(require('vite-plugin-formatjs'))"
 
 ### 3. 检查 GitHub Release
 
-访问 [GitHub Releases](https://github.com/Asfamilybank/vite-plugin-formatjs/releases) 查看自动生成的发布说明。
+访问 [GitHub Releases](https://github.com/asfamilybank/vite-plugin-formatjs/releases) 查看自动生成的发布说明。
 
 ## 故障排除
 
@@ -168,6 +168,6 @@ npm login
 
 如果遇到问题，请：
 
-1. 检查 [GitHub Issues](https://github.com/Asfamilybank/vite-plugin-formatjs/issues)
-2. 查看 [GitHub Actions 日志](https://github.com/Asfamilybank/vite-plugin-formatjs/actions)
+1. 检查 [GitHub Issues](https://github.com/asfamilybank/vite-plugin-formatjs/issues)
+2. 查看 [GitHub Actions 日志](https://github.com/asfamilybank/vite-plugin-formatjs/actions)
 3. 创建新的 Issue 描述问题 

@@ -359,7 +359,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📄 License
 
-MIT © [Asfamilybank](https://github.com/Asfamilybank)
+MIT © [asfamilybank](https://github.com/asfamilybank)
 
 ## 🔗 Links
 

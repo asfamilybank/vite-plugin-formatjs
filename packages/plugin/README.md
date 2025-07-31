@@ -453,11 +453,11 @@ formatjs({
 
 ## 📝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://github.com/Asfamilybank/vite-plugin-formatjs/blob/main/CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/asfamilybank/vite-plugin-formatjs/blob/main/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-MIT © [Asfamilybank](https://github.com/Asfamilybank)
+MIT © [asfamilybank](https://github.com/asfamilybank)
 
 ## 🔗 Links
 
