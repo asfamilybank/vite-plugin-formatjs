@@ -54,10 +54,16 @@ describe('Extract', () => {
       expect(result).toBe(true);
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         'Check if file is in extract include: ',
-        'src/component.tsx'
+        '/mock/project/src/component.tsx'
       );
-      expect(mockedMinimatch).toHaveBeenCalledWith('src/component.tsx', 'src/**/*.tsx');
-      expect(mockedMinimatch).toHaveBeenCalledWith('src/component.tsx', 'node_modules/**');
+      expect(mockedMinimatch).toHaveBeenCalledWith(
+        '/mock/project/src/component.tsx',
+        '/mock/project/src/**/*.tsx'
+      );
+      expect(mockedMinimatch).toHaveBeenCalledWith(
+        '/mock/project/src/component.tsx',
+        '/mock/project/node_modules/**'
+      );
     });
 
     it('should return false when file does not match any include pattern', () => {
@@ -127,7 +133,7 @@ describe('Extract', () => {
 
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         'Check if file is in extract include: ',
-        'src/test.ts'
+        '/mock/project/src/test.ts'
       );
       expect(mockedLogger.debug).toHaveBeenCalledWith(
         'File must match include: ',
