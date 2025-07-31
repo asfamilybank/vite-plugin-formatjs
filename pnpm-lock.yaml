@@ -66,15 +66,9 @@ importers:
       '@formatjs/ts-transformer':
         specifier: ^3.14.0
         version: 3.14.0
-      fs-extra:
-        specifier: ^11.3.0
-        version: 11.3.0
       glob:
         specifier: ^10.4.5
         version: 10.4.5
-      json-stable-stringify:
-        specifier: ^1.3.0
-        version: 1.3.0
       minimatch:
         specifier: ^10.0.3
         version: 10.0.3

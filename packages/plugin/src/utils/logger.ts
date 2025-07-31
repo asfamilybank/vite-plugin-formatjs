@@ -209,7 +209,7 @@ export class Logger {
   progress(message: string, ...args: unknown[]): void {
     if (this.shouldLog(LogLevel.INFO)) {
       console.log(
-        this.formatMessage('progress', '🔄', COLORS.BLUE, message),
+        this.formatMessage('progress', '♻️', COLORS.BLUE, message),
         ...args
       );
     }
