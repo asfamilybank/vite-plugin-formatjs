@@ -57,8 +57,6 @@ jobs:
       
       - name: Publish to npm
         run: pnpm plugin release
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Generate Release Notes
         id: release_notes
