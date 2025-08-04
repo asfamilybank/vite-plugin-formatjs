@@ -8,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- New features that have been added
+
+### Changed
+- Changes in existing functionality
+
+### Deprecated
+- Features that will be removed in upcoming releases
+
+### Removed
+- Features that have been removed
+
+### Fixed
+- Bug fixes
+
+### Security
+- Security vulnerability fixes
+
+## [0.0.5] - 2024-01-XX
+
+### Added
+- CHANGELOG.md file for better version tracking
+- Automatic release notes generation in GitHub Actions
+- OIDC authentication for npm publishing (no more NPM_TOKEN required)
+
+### Changed
+- **BREAKING**: Merged publish and release workflows into a single unified workflow
+- Improved GitHub Actions workflow structure and efficiency
+- Enhanced release process with automatic changelog generation
+- Updated example project i18n configuration
+
+### Fixed
+- Streamlined CI/CD pipeline for better maintainability
+- Optimized release workflow to reduce duplication
+
+## [0.0.4] - 2024-01-XX
+
+### Added
 - Initial release of vite-plugin-formatjs
 - Automatic message extraction from source code
 - Hot reload support for development
@@ -15,28 +52,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build-time optimization and caching
 - Flexible configuration options
 - Rich logging and debug information
-- Full TypeScript support with detailed type definitions
-
-### Features
-- 🔄 Automatic Message Extraction
-- ⚡ Hot Reload Support
-- 🎯 Multi-Framework Support
-- 🚀 Performance Optimized
-- 📦 Build Integration
-- 🛠️ Flexible Configuration
-- 📊 Rich Logging
-- 🔧 TypeScript Support
-
-## [0.0.0] - 2024-01-XX
-
-### Added
-- Initial development release
-- Core extraction functionality
-- Compilation support
-- Vite plugin integration
-- TypeScript definitions
-- Comprehensive documentation
-- Example project
-- Test suite
-- GitHub Actions CI/CD pipeline
-- Automated release workflow 
+- Full TypeScript support with detailed type definitions 

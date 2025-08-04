@@ -5,13 +5,13 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write  # Required for GitHub Release
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,10 +55,62 @@ jobs:
           test -f packages/plugin/dist/index.cjs
           echo "Build verification completed"
       
-      - name: Publish to npm
+      - name: Check if package exists
+        id: check-package
+        run: |
+          cd packages/plugin
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          
+          if npm view $PACKAGE_NAME@$PACKAGE_VERSION version >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Package $PACKAGE_NAME@$PACKAGE_VERSION already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Package $PACKAGE_NAME@$PACKAGE_VERSION does not exist"
+          fi
+      
+      - name: Publish to npm (OIDC)
+        if: steps.check-package.outputs.exists != 'true'
         run: pnpm plugin release
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # 注意：这里不需要 NODE_AUTH_TOKEN，OIDC 会自动处理认证
+      
+      - name: Publish skipped
+        if: steps.check-package.outputs.exists == 'true'
+        run: echo "Package already exists, skipping npm publish"
+      
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # 获取上一个标签
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            # 生成从上一个标签到当前标签的变更日志
+            CHANGELOG=$(git log --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD --no-merges)
+          else
+            # 如果没有上一个标签，显示所有提交
+            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges)
+          fi
+          
+          # 创建 release body
+          RELEASE_BODY="## What's Changed
+          
+          $CHANGELOG
+          
+          ## Installation
+          
+          \`\`\`bash
+          npm install -D vite-plugin-formatjs
+          \`\`\`
+          
+          ## Documentation
+          
+          See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions."
+          
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
         uses: actions/create-release@v1.1.4
@@ -67,26 +119,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            ## What's Changed
-            
-            This release includes:
-            - Automatic message extraction from source code
-            - Hot reload support for development
-            - Multi-framework support (React, Vue, TypeScript, JavaScript)
-            - Build-time optimization and caching
-            - Flexible configuration options
-            - Rich logging and debug information
-            - Full TypeScript support with detailed type definitions
-            
-            ## Installation
-            
-            ```bash
-            npm install -D vite-plugin-formatjs
-            ```
-            
-            ## Documentation
-            
-            See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
+          body: ${{ steps.release_notes.outputs.body }}
           draft: false
           prerelease: false 
