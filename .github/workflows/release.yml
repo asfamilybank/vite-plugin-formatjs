@@ -78,6 +78,7 @@ jobs:
           echo "Package version: $(node -p "require('./packages/plugin/package.json').version")"
       
       - name: Publish to npm
+        id: publish_npm
         if: steps.check-package.outputs.exists != 'true'
         run: pnpm plugin release
         env:
@@ -86,6 +87,15 @@ jobs:
       - name: Publish skipped
         if: steps.check-package.outputs.exists == 'true'
         run: echo "Package already exists, skipping npm publish"
+      
+      - name: Clean up existing draft releases
+        run: |
+          # 使用 curl 删除可能存在的 draft release
+          curl -X DELETE \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" \
+            2>/dev/null || echo "No existing release to delete"
       
       - name: Generate Release Notes
         id: release_notes
@@ -121,6 +131,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
+        if: steps.publish_npm.outcome == 'success' || steps.check-package.outputs.exists == 'true'
         uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
