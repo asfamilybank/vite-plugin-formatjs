@@ -55,89 +55,31 @@ jobs:
           test -f packages/plugin/dist/index.cjs
           echo "Build verification completed"
       
-      - name: Check if package exists
-        id: check-package
-        run: |
-          cd packages/plugin
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          
-          if npm view $PACKAGE_NAME@$PACKAGE_VERSION version >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Package $PACKAGE_NAME@$PACKAGE_VERSION already exists"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Package $PACKAGE_NAME@$PACKAGE_VERSION does not exist"
-          fi
-      
-      - name: Debug npm configuration
-        run: |
-          echo "Current npm registry: $(npm config get registry)"
-          echo "Current npm user: $(npm whoami 2>/dev/null || echo 'Not logged in')"
-          echo "Package name: $(node -p "require('./packages/plugin/package.json').name")"
-          echo "Package version: $(node -p "require('./packages/plugin/package.json').version")"
-      
       - name: Publish to npm
-        id: publish_npm
-        if: steps.check-package.outputs.exists != 'true'
         run: pnpm plugin release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
-      - name: Publish skipped
-        if: steps.check-package.outputs.exists == 'true'
-        run: echo "Package already exists, skipping npm publish"
-      
-      - name: Clean up existing draft releases
-        run: |
-          # 使用 curl 删除可能存在的 draft release
-          curl -X DELETE \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" \
-            2>/dev/null || echo "No existing release to delete"
-      
-      - name: Generate Release Notes
-        id: release_notes
-        run: |
-          # 获取上一个标签
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-          
-          if [ -n "$PREVIOUS_TAG" ]; then
-            # 生成从上一个标签到当前标签的变更日志
-            CHANGELOG=$(git log --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD --no-merges)
-          else
-            # 如果没有上一个标签，显示所有提交
-            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges)
-          fi
-          
-          # 创建 release body
-          RELEASE_BODY="## What's Changed
-          
-          $CHANGELOG
-          
-          ## Installation
-          
-          \`\`\`bash
-          npm install -D vite-plugin-formatjs
-          \`\`\`
-          
-          ## Documentation
-          
-          See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions."
-          
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      
       - name: Create GitHub Release
-        if: steps.publish_npm.outcome == 'success' || steps.check-package.outputs.exists == 'true'
         uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: ${{ steps.release_notes.outputs.body }}
+          body: |
+            ## What's Changed
+            
+            This release includes the latest improvements and bug fixes.
+            
+            ## Installation
+            
+            ```bash
+            npm install -D vite-plugin-formatjs
+            ```
+            
+            ## Documentation
+            
+            See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
           draft: false
           prerelease: false 
