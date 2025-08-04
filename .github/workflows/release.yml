@@ -60,6 +60,82 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # 获取当前版本号
+          VERSION=$(node -p "require('./packages/plugin/package.json').version")
+          
+          # 从 CHANGELOG.md 中提取对应版本的内容
+          if [ -f "CHANGELOG.md" ]; then
+            # 使用 awk 提取版本内容
+            CHANGELOG_CONTENT=$(awk -v version="[$VERSION]" '
+              BEGIN { found=0; content="" }
+              /^## \[.*\]/ { 
+                if ($0 ~ version) { 
+                  found=1 
+                } else { 
+                  found=0 
+                }
+              }
+              found { 
+                if (content != "") content = content "\n" $0
+                else content = $0
+              }
+              /^## \[.*\]/ && found==0 { 
+                if (content != "" && content !~ /^## \[.*\]/) {
+                  exit
+                }
+              }
+            ' CHANGELOG.md)
+            
+            if [ -n "$CHANGELOG_CONTENT" ]; then
+              RELEASE_BODY="$CHANGELOG_CONTENT
+              
+              ## Installation
+              
+              \`\`\`bash
+              npm install -D vite-plugin-formatjs
+              \`\`\`
+              
+              ## Documentation
+              
+              See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions."
+            else
+              RELEASE_BODY="## What's Changed
+              
+              This release includes the latest improvements and bug fixes.
+              
+              ## Installation
+              
+              \`\`\`bash
+              npm install -D vite-plugin-formatjs
+              \`\`\`
+              
+              ## Documentation
+              
+              See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions."
+            fi
+          else
+            RELEASE_BODY="## What's Changed
+              
+              This release includes the latest improvements and bug fixes.
+              
+              ## Installation
+              
+              \`\`\`bash
+              npm install -D vite-plugin-formatjs
+              \`\`\`
+              
+              ## Documentation
+              
+              See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions."
+          fi
+          
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
       - name: Create GitHub Release
         uses: actions/create-release@v1.1.4
         env:
@@ -67,19 +143,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            ## What's Changed
-            
-            This release includes the latest improvements and bug fixes.
-            
-            ## Installation
-            
-            ```bash
-            npm install -D vite-plugin-formatjs
-            ```
-            
-            ## Documentation
-            
-            See the [README](https://github.com/asfamilybank/vite-plugin-formatjs#readme) for detailed usage instructions.
+          body: ${{ steps.release_notes.outputs.body }}
           draft: false
           prerelease: false 
