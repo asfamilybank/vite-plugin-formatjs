@@ -57,16 +57,18 @@ jobs:
       
       - name: Publish to npm
         run: pnpm plugin release
-      
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Generate Release Notes
         id: release_notes
         run: |
-          # 获取当前版本号
+          # Get the current version
           VERSION=$(node -p "require('./packages/plugin/package.json').version")
           
-          # 从 CHANGELOG.md 中提取对应版本的内容
+          # Extract the content for the corresponding version from CHANGELOG.md
           if [ -f "CHANGELOG.md" ]; then
-            # 使用 awk 提取版本内容
+            # Use awk to extract the version content
             CHANGELOG_CONTENT=$(awk -v version="[$VERSION]" '
               BEGIN { found=0; content="" }
               /^## \[.*\]/ { 
