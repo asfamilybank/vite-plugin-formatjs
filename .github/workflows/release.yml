@@ -70,10 +70,18 @@ jobs:
             echo "Package $PACKAGE_NAME@$PACKAGE_VERSION does not exist"
           fi
       
-      - name: Publish to npm (OIDC)
+      - name: Debug npm configuration
+        run: |
+          echo "Current npm registry: $(npm config get registry)"
+          echo "Current npm user: $(npm whoami 2>/dev/null || echo 'Not logged in')"
+          echo "Package name: $(node -p "require('./packages/plugin/package.json').name")"
+          echo "Package version: $(node -p "require('./packages/plugin/package.json').version")"
+      
+      - name: Publish to npm
         if: steps.check-package.outputs.exists != 'true'
         run: pnpm plugin release
-        # 注意：这里不需要 NODE_AUTH_TOKEN，OIDC 会自动处理认证
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Publish skipped
         if: steps.check-package.outputs.exists == 'true'
