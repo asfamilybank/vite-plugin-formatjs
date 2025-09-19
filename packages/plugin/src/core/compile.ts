@@ -105,7 +105,7 @@ export async function compileMessages(options: CompileOptions): Promise<void> {
       const fileName = path.basename(file);
       const outFile = path.resolve(process.cwd(), options.outputDir, fileName);
       logger.debug('Write compiled message file: ', outFile);
-      return fs.writeFile(outFile, results[i]!, 'utf8');
+      return fs.writeFile(outFile, `${results[i]!}\n`, 'utf8');
     })
   );
 }

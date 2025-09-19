@@ -73,5 +73,5 @@ export async function extractMessage(
 
   logger.debug('Merged messages: ', mergedMessages);
 
-  await fs.writeFile(options.outFile!, JSON.stringify(mergedMessages, null, 2));
+  await fs.writeFile(options.outFile!, `${JSON.stringify(mergedMessages, null, 2)}\n`);
 }
