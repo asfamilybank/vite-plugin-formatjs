@@ -334,17 +334,17 @@ describe('Compile', () => {
 
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         '/mock/project/dist/i18n/en.json',
-        'compiled en content',
+        'compiled en content\n',
         'utf8'
       );
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         '/mock/project/dist/i18n/zh.json',
-        'compiled zh content',
+        'compiled zh content\n',
         'utf8'
       );
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         '/mock/project/dist/i18n/fr.json',
-        'compiled fr content',
+        'compiled fr content\n',
         'utf8'
       );
     });

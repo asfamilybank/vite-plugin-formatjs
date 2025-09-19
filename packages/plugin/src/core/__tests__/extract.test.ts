@@ -272,7 +272,7 @@ describe('Extract', () => {
       expect(mockedLogger.debug).toHaveBeenCalledWith('Merged messages: ', expectedMergedMessages);
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
-        JSON.stringify(expectedMergedMessages, null, 2)
+        JSON.stringify(expectedMergedMessages, null, 2) + '\n'
       );
     });
 
@@ -291,7 +291,7 @@ describe('Extract', () => {
 
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
-        JSON.stringify({ 'message.1': 'Hello' }, null, 2)
+        JSON.stringify({ 'message.1': 'Hello' }, null, 2) + '\n'
       );
     });
 
@@ -309,7 +309,7 @@ describe('Extract', () => {
 
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
-        JSON.stringify({ 'message.existing': 'Existing message' }, null, 2)
+        JSON.stringify({ 'message.existing': 'Existing message' }, null, 2) + '\n'
       );
     });
 
@@ -362,7 +362,7 @@ describe('Extract', () => {
 
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
-        JSON.stringify(complexMessages, null, 2)
+        JSON.stringify(complexMessages, null, 2) + '\n'
       );
     });
   });

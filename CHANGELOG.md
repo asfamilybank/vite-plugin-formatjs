@@ -25,6 +25,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security vulnerability fixes
 
+## [1.0.0] - 2024-12-19
+
+### Added
+- **MAJOR RELEASE**: First stable release of vite-plugin-formatjs
+- Complete TypeScript support with comprehensive type definitions
+- Full FormatJS integration for message extraction and compilation
+- Hot reload support for development environments
+- Multi-framework support (React, Vue, TypeScript, JavaScript)
+- Build-time optimization and intelligent caching
+- Flexible configuration options for various use cases
+- Rich logging and debug information
+- Comprehensive test coverage (124 tests)
+- Automated CI/CD pipeline with GitHub Actions
+- OIDC authentication for secure npm publishing
+
+### Changed
+- **BREAKING**: Stable API with semantic versioning
+- Enhanced performance and reliability
+- Improved error handling and user experience
+- Streamlined configuration options
+
+### Fixed
+- All test cases now pass consistently
+- Resolved JSON formatting issues in test assertions
+- Improved build stability and reliability
+
 ## [0.0.6] - 2024-01-XX
 
 ### Added
