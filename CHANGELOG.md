@@ -25,6 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security vulnerability fixes
 
+## [1.1.0] - 2024-12-19
+
+### Added
+- Enhanced hot reload functionality for better development experience
+- Improved message extraction performance and reliability
+- Better error handling and debugging information
+- Enhanced TypeScript support with more comprehensive type definitions
+
+### Changed
+- Optimized build process for faster compilation
+- Improved logging system with more detailed information
+- Enhanced configuration validation and error messages
+
+### Fixed
+- Resolved potential memory leaks in long-running development sessions
+- Fixed edge cases in message extraction for complex nested components
+- Improved stability of hot reload functionality
+
 ## [1.0.0] - 2024-12-19
 
 ### Added
