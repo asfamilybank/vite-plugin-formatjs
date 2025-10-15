@@ -66,6 +66,30 @@ export function isMessageFile(
 }
 
 /**
+ * 检查文件是否是编译后的消息文件
+ */
+export function isCompiledMessageFile(
+  filePath: string,
+  outputDir: string,
+): boolean {
+  const absoluteFilePath = path.resolve(process.cwd(), filePath);
+  logger.debug('Check if it is a compiled message file: ', absoluteFilePath);
+  const normalizedMessageDir = path.resolve(process.cwd(), outputDir);
+  logger.debug('Compiled message files dir: ', normalizedMessageDir);
+
+  // 检查文件是否在编译后的消息目录中
+  const fileDir = path.dirname(absoluteFilePath);
+  if (fileDir !== normalizedMessageDir) {
+    return false;
+  }
+
+  // 检查是否是 JSON 文件
+  const fileName = path.basename(filePath);
+
+  return fileName.endsWith('.json');
+}
+
+/**
  * 编译单个消息文件
  */
 export async function compileMessageFile(

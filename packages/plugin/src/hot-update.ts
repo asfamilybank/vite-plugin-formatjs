@@ -1,0 +1,37 @@
+export function onHotUpdate(
+  update: (payload: {
+    file: string;
+    language: string;
+    messages: Record<string, string>;
+  }) => void
+) {
+  // eslint-disable-next-line
+  import.meta.hot?.on('vite-plugin-formatjs:update-messages', payload => {
+    update(
+      payload as {
+        file: string;
+        language: string;
+        messages: Record<string, string>;
+      }
+    );
+  });
+}
+
+export function offHotUpdate(
+  update: (payload: {
+    file: string;
+    language: string;
+    messages: Record<string, string>;
+  }) => void
+) {
+  // eslint-disable-next-line
+  import.meta.hot?.off('vite-plugin-formatjs:update-messages', payload => {
+    update(
+      payload as {
+        file: string;
+        language: string;
+        messages: Record<string, string>;
+      }
+    );
+  });
+}

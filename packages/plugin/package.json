@@ -33,6 +33,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./utils": {
+      "types": "./dist/hot-update.d.ts",
+      "import": "./dist/hot-update.js",
+      "require": "./dist/hot-update.cjs"
     }
   },
   "files": [

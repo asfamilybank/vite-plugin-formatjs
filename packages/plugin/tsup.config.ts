@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/hot-update.ts'],
   format: ['cjs', 'esm'],
   tsconfig: 'tsconfig.build.json',
   target: 'node16',

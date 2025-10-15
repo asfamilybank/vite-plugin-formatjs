@@ -11,6 +11,7 @@ import {
   type PartialConfig,
   type VitePluginFormatJSOptions,
   extractMessage,
+  isCompiledMessageFile,
 } from ':core';
 import { PLUGIN_NAME, Timer, logger, setDebug } from ':utils';
 
@@ -97,7 +98,7 @@ export function formatjs(
     },
 
     async handleHotUpdate(ctx) {
-      const { file } = ctx;
+      const { file, read, server } = ctx;
       logger.debug('Handling hot update: ', file);
 
       // 检查是否是消息文件（需要编译的翻译文件）
@@ -121,6 +122,18 @@ export function formatjs(
           void debouncedExtract();
         }, config.debounceTime);
         return;
+      }
+
+      if (isCompiledMessageFile(file, config.compile.outputDir)) {
+        const language = file.split('/').pop()?.split('.').shift();
+        const messages = JSON.parse(await read()) as Record<string, string>;
+        server.ws.send({
+          type: 'custom',
+          event: 'vite-plugin-formatjs:update-messages',
+          data: { file, language, messages }
+        })
+
+        return [];
       }
       return;
     },

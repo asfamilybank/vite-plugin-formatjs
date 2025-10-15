@@ -9,3 +9,5 @@ export type { VitePluginFormatJSOptions } from './core/types';
 
 // 默认导出
 export { formatjs as default } from './plugin';
+
+export { onHotUpdate, offHotUpdate } from './hot-update';

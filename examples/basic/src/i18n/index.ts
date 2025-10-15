@@ -38,7 +38,7 @@ export async function loadMessages(
       error
     );
 
-    // 如果加载失败且不是英文，尝试加载英文å
+    // 如果加载失败且不是英文，尝试加载英文
     if (normalizedLocale !== "en") {
       try {
         const fallbackMessages = await import("./compiled-lang/en.json");

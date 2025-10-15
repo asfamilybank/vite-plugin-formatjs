@@ -4,6 +4,7 @@
   "compilerOptions": {
     "module": "esnext",
     "moduleResolution": "bundler",
+    "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
       ":*": ["src/*"]
