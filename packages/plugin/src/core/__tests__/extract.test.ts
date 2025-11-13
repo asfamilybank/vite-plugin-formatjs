@@ -218,7 +218,9 @@ describe('Extract', () => {
       mockedGlobSync.mockReturnValue([]);
       mockedExtractAndWrite.mockRejectedValue(error);
 
-      await expect(extractMessages(mockOptions)).rejects.toThrow('Extraction failed');
+      await expect(extractMessages(mockOptions)).rejects.toThrow(
+        'Extraction failed'
+      );
     });
   });
 
@@ -262,14 +264,23 @@ describe('Extract', () => {
 
       await extractMessage(mockFiles, mockOptions);
 
-      expect(mockedLogger.debug).toHaveBeenCalledWith('Extracting messages: ', mockFiles);
+      expect(mockedLogger.debug).toHaveBeenCalledWith(
+        'Extracting messages: ',
+        mockFiles
+      );
       expect(mockedExtract).toHaveBeenCalledWith(mockFiles, {
         ignore: mockOptions.ignore,
         outFile: mockOptions.outFile,
         throws: mockOptions.throws,
       });
-      expect(mockedFs.readFile).toHaveBeenCalledWith(mockOptions.outFile, 'utf-8');
-      expect(mockedLogger.debug).toHaveBeenCalledWith('Merged messages: ', expectedMergedMessages);
+      expect(mockedFs.readFile).toHaveBeenCalledWith(
+        mockOptions.outFile,
+        'utf-8'
+      );
+      expect(mockedLogger.debug).toHaveBeenCalledWith(
+        'Merged messages: ',
+        expectedMergedMessages
+      );
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
         JSON.stringify(expectedMergedMessages, null, 2) + '\n'
@@ -309,7 +320,8 @@ describe('Extract', () => {
 
       expect(mockedFs.writeFile).toHaveBeenCalledWith(
         mockOptions.outFile,
-        JSON.stringify({ 'message.existing': 'Existing message' }, null, 2) + '\n'
+        JSON.stringify({ 'message.existing': 'Existing message' }, null, 2) +
+          '\n'
       );
     });
 
@@ -318,7 +330,9 @@ describe('Extract', () => {
       mockedExtract.mockResolvedValue(JSON.stringify({}));
       mockedFs.readFile.mockRejectedValue(fsError);
 
-      await expect(extractMessage(mockFiles, mockOptions)).rejects.toThrow('File not found');
+      await expect(extractMessage(mockFiles, mockOptions)).rejects.toThrow(
+        'File not found'
+      );
     });
 
     it('should handle file system errors when writing messages', async () => {
@@ -327,7 +341,9 @@ describe('Extract', () => {
       mockedFs.readFile.mockResolvedValue(JSON.stringify({}));
       mockedFs.writeFile.mockRejectedValue(fsError);
 
-      await expect(extractMessage(mockFiles, mockOptions)).rejects.toThrow('Permission denied');
+      await expect(extractMessage(mockFiles, mockOptions)).rejects.toThrow(
+        'Permission denied'
+      );
     });
 
     it('should handle invalid JSON in existing messages file', async () => {

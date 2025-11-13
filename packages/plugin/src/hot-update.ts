@@ -5,7 +5,6 @@ export function onHotUpdate(
     messages: Record<string, string>;
   }) => void
 ) {
-  // eslint-disable-next-line
   import.meta.hot?.on('vite-plugin-formatjs:update-messages', payload => {
     update(
       payload as {
@@ -24,7 +23,6 @@ export function offHotUpdate(
     messages: Record<string, string>;
   }) => void
 ) {
-  // eslint-disable-next-line
   import.meta.hot?.off('vite-plugin-formatjs:update-messages', payload => {
     update(
       payload as {

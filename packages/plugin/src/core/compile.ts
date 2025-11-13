@@ -16,25 +16,25 @@ const { compile, compileAndWrite } = pkg;
 export async function findMessageFiles(messageDir: string): Promise<string[]> {
   const inputDir = path.resolve(process.cwd(), messageDir);
   const messageFiles: string[] = [];
-  
-    const files = await fs.readdir(inputDir);
 
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const filePath = path.join(inputDir, file);
-        logger.debug('Find message file: ', filePath);
+  const files = await fs.readdir(inputDir);
 
-        // 检查是否是有效的 JSON 文件
-        try {
-          const content = await fs.readFile(filePath, 'utf8');
-          JSON.parse(content);
-          messageFiles.push(filePath);
-        } catch {
-          // 忽略无效的 JSON 文件
-          logger.debug('Skip invalid JSON file: ', filePath);
-        }
+  for (const file of files) {
+    if (file.endsWith('.json')) {
+      const filePath = path.join(inputDir, file);
+      logger.debug('Find message file: ', filePath);
+
+      // 检查是否是有效的 JSON 文件
+      try {
+        const content = await fs.readFile(filePath, 'utf8');
+        JSON.parse(content);
+        messageFiles.push(filePath);
+      } catch {
+        // 忽略无效的 JSON 文件
+        logger.debug('Skip invalid JSON file: ', filePath);
       }
     }
+  }
 
   return messageFiles;
 }
@@ -70,7 +70,7 @@ export function isMessageFile(
  */
 export function isCompiledMessageFile(
   filePath: string,
-  outputDir: string,
+  outputDir: string
 ): boolean {
   const absoluteFilePath = path.resolve(process.cwd(), filePath);
   logger.debug('Check if it is a compiled message file: ', absoluteFilePath);

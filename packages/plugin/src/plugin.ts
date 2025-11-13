@@ -49,6 +49,9 @@ export function formatjs(
       await compileMessageFile(config.extract.outFile!, config.compile);
       timer.end();
       logger.success(`Processed messages in ${timer.duration}ms`);
+    } catch (error) {
+      logger.error('Processing messages failed');
+      logger.debug('', error);
     } finally {
       inProgress = false;
       pendingExtract.clear();
@@ -56,12 +59,17 @@ export function formatjs(
   }
 
   async function compile(file: string) {
-    logger.debug('Compiling message file: ', file);
+    try {
+      logger.debug('Compiling message file: ', file);
     const timer = new Timer('Compiling message file');
     logger.progress('Compiling message file...');
     await compileMessageFile(file, config.compile);
     timer.end();
     logger.success(`Compiled message file in ${timer.duration}ms`);
+    } catch (error) {
+      logger.error('Compiling message file failed');
+      logger.debug('', error);
+    }
   }
 
   return {
@@ -73,7 +81,7 @@ export function formatjs(
         if (
           isMessageFile(file, config.compile.inputDir, config.extract.outFile!)
         ) {
-          void compile(file);
+            void compile(file);
         }
       });
     },
@@ -89,10 +97,10 @@ export function formatjs(
         try {
           await extractMessages(config.extract);
           await compileMessages(config.compile);
-          timer.end();
           logger.success(`Processed messages in ${timer.duration}ms`);
         } catch (error) {
-          logger.error('Processing messages failed:', error);
+          logger.error('Processing messages failed');
+          logger.debug('', error);
         }
       }
     },
@@ -105,7 +113,12 @@ export function formatjs(
       if (
         isMessageFile(file, config.compile.inputDir, config.extract.outFile!)
       ) {
-        await compile(file);
+        try {
+          await compile(file);
+        } catch (error) {
+          logger.error('Compiling message file failed');
+          logger.debug('', error);
+        } 
         return;
       }
 
@@ -126,12 +139,17 @@ export function formatjs(
 
       if (isCompiledMessageFile(file, config.compile.outputDir)) {
         const language = file.split('/').pop()?.split('.').shift();
-        const messages = JSON.parse(await read()) as Record<string, string>;
-        server.ws.send({
-          type: 'custom',
-          event: 'vite-plugin-formatjs:update-messages',
-          data: { file, language, messages }
-        })
+        try {
+          const messages = JSON.parse(await read()) as Record<string, string>;
+          server.ws.send({
+            type: 'custom',
+            event: 'vite-plugin-formatjs:update-messages',
+            data: { file, language, messages },
+          });
+        } catch (error) {
+          logger.error('Parsing message file failed');
+          logger.debug('', error);
+        }
 
         return [];
       }

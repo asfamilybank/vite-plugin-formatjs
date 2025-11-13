@@ -48,7 +48,7 @@ describe('Compile', () => {
     vi.clearAllMocks();
     // Mock process.cwd()
     vi.spyOn(process, 'cwd').mockReturnValue('/mock/project');
-    
+
     // No path mocks needed, using real path module
   });
 
@@ -158,9 +158,7 @@ describe('Compile', () => {
       const result = await findMessageFiles('../../i18n/lang');
 
       expect(result).toEqual(['/i18n/lang/messages.json']);
-      expect(mockedFs.readdir).toHaveBeenCalledWith(
-        '/i18n/lang'
-      );
+      expect(mockedFs.readdir).toHaveBeenCalledWith('/i18n/lang');
     });
   });
 
@@ -478,7 +476,11 @@ describe('Compile', () => {
 
       // Should identify valid message files
       expect(
-        isMessageFile('/mock/project/src/i18n/lang/en.json', messageDir, excludeFile)
+        isMessageFile(
+          '/mock/project/src/i18n/lang/en.json',
+          messageDir,
+          excludeFile
+        )
       ).toBe(true);
       expect(
         isMessageFile(

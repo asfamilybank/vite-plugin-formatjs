@@ -37,7 +37,7 @@ const LEVEL_COLORS = {
  * 日志级别表情映射
  */
 const LEVEL_EMOJIS = {
-  [LogLevel.DEBUG]: '🔍',
+  [LogLevel.DEBUG]: '🐞',
   [LogLevel.INFO]: 'ℹ️',
   [LogLevel.WARN]: '⚠️',
   [LogLevel.ERROR]: '❌',
