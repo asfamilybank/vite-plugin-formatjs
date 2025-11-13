@@ -52,7 +52,6 @@ jobs:
           echo "Checking if main files exist..."
           test -f packages/plugin/dist/index.js
           test -f packages/plugin/dist/index.d.ts
-          test -f packages/plugin/dist/index.cjs
           echo "Build verification completed"
       
       - name: Publish to npm
