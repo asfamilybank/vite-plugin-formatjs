@@ -50,7 +50,8 @@ check_step "项目构建" "pnpm run build"
 check_step "构建输出验证" "
     test -f packages/plugin/dist/index.js && \
     test -f packages/plugin/dist/index.d.ts && \
-    test -f packages/plugin/dist/index.cjs
+    test -f packages/plugin/dist/hot-update.js && \
+    test -f packages/plugin/dist/hot-update.d.ts
 "
 
 # 8. 检查必要文件
