@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security vulnerability fixes
 
+## [1.1.3] - 2024-12-19
+
+### Changed
+- Removed CommonJS build output validation from CI and release workflows to align with ESM-only build configuration
+
 ## [1.1.2] - 2024-12-19
 
 ### Changed
