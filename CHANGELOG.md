@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security vulnerability fixes
 
+## [1.1.2] - 2024-12-19
+
+### Changed
+- Streamlined package exports and build configuration for better maintainability
+- Updated build output validation to match ESM-only build configuration
+
+### Fixed
+- Fixed build output validation script to correctly verify ESM build artifacts
+
 ## [1.1.1] - 2025-11-13
 
 ### Changed
