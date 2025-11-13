@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security vulnerability fixes
 
+## [1.1.1] - 2025-11-13
+
+### Changed
+- Adjusted the output format of the logger and error classification to improve troubleshooting experience
+
+### Fixed
+- Fixed the issue of log noise and missing information in the message processing flow under exceptional branches
+
 ## [1.1.0] - 2024-12-19
 
 ### Added
